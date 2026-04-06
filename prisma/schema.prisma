@@ -1,0 +1,577 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  EMPLOYEE
+  AGENT
+  LEAD
+  TEAM_ADMIN
+  OWNER
+}
+
+enum TeamAssignmentStrategy {
+  QUEUE_ONLY
+  ROUND_ROBIN
+}
+
+enum TeamRole {
+  AGENT
+  LEAD
+  ADMIN
+}
+
+enum TicketStatus {
+  NEW
+  TRIAGED
+  ASSIGNED
+  IN_PROGRESS
+  WAITING_ON_REQUESTER
+  WAITING_ON_VENDOR
+  RESOLVED
+  CLOSED
+  REOPENED
+}
+
+enum TicketPriority {
+  P1
+  P2
+  P3
+  P4
+}
+
+enum TicketChannel {
+  PORTAL
+  EMAIL
+}
+
+enum MessageType {
+  PUBLIC
+  INTERNAL
+}
+
+enum AccessLevel {
+  READ
+  WRITE
+}
+
+enum NotificationType {
+  TICKET_ASSIGNED
+  TICKET_UPDATED
+  NEW_MESSAGE
+  TICKET_MENTIONED
+  SLA_AT_RISK
+  SLA_BREACHED
+  TICKET_RESOLVED
+  TICKET_TRANSFERRED
+}
+
+enum NotificationChannel {
+  EMAIL
+}
+
+enum OutboxStatus {
+  PENDING
+  PROCESSING
+  SENT
+  FAILED
+}
+
+enum AttachmentScanStatus {
+  PENDING
+  CLEAN
+  INFECTED
+  FAILED
+}
+
+enum SlaNotifyRole {
+  AGENT
+  LEAD
+  MANAGER
+  OWNER
+}
+
+enum IdempotencyState {
+  IN_PROGRESS
+  COMPLETED
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  displayName   String
+  department    String?
+  location      String?
+  role          UserRole @default(EMPLOYEE)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  primaryTeamId String?
+  graphProfile  Json?
+
+  primaryTeam          Team?               @relation("UserPrimaryTeam", fields: [primaryTeamId], references: [id])
+  teamMemberships      TeamMember[]
+  requestedTickets     Ticket[]            @relation("TicketRequester")
+  assignedTickets      Ticket[]            @relation("TicketAssignee")
+  messages             TicketMessage[]
+  ticketEvents         TicketEvent[]
+  routingRules         RoutingRule[]
+  slaPoliciesCreated   SlaPolicyConfig[]
+  automationRules      AutomationRule[]
+  cannedResponses      CannedResponse[]
+  savedViews           SavedView[]
+  notifications        Notification[]      @relation("NotificationUser")
+  actedNotifications   Notification[]      @relation("NotificationActor")
+  attachments          Attachment[]
+  teamsLastAssigned     Team[]             @relation("TeamLastAssigned")
+  ticketFollowers      TicketFollower[]
+  notificationOutbox   NotificationOutbox[]
+  adminAuditEvents     AdminAuditEvent[]
+}
+
+model Team {
+  id                   String                 @id @default(cuid())
+  name                 String
+  slug                 String                 @unique
+  description          String?
+  isActive             Boolean                @default(true)
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  assignmentStrategy   TeamAssignmentStrategy @default(QUEUE_ONLY)
+  lastAssignedUserId   String?
+
+  lastAssignedUser     User?                  @relation("TeamLastAssigned", fields: [lastAssignedUserId], references: [id])
+  members              TeamMember[]
+  tickets              Ticket[]
+  routingRules         RoutingRule[]
+  savedViews           SavedView[]
+  ticketAccess         TicketAccess[]
+  adminAuditEvents     AdminAuditEvent[]
+  slaPolicyAssignments SlaPolicyAssignment[]
+  automationRules      AutomationRule[]
+  primaryUsers         User[]                 @relation("UserPrimaryTeam")
+  customFields         CustomField[]
+  cannedResponses      CannedResponse[]
+}
+
+model TeamMember {
+  id        String   @id @default(cuid())
+  teamId    String
+  userId    String
+  role      TeamRole @default(AGENT)
+  createdAt DateTime @default(now())
+
+  team Team @relation(fields: [teamId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([teamId, userId])
+}
+
+model Ticket {
+  id                 String         @id @default(cuid())
+  number             Int            @default(autoincrement())
+  subject            String         @db.VarChar(255)
+  description        String
+  status             TicketStatus   @default(NEW)
+  priority           TicketPriority @default(P3)
+  channel            TicketChannel  @default(PORTAL)
+  requesterId        String
+  assignedTeamId     String?
+  assigneeId         String?
+  dueAt              DateTime?
+  resolvedAt         DateTime?
+  closedAt           DateTime?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  categoryId         String?
+  completedAt        DateTime?
+  displayId          String?
+  firstResponseDueAt DateTime?
+  firstResponseAt    DateTime?
+  slaPausedAt        DateTime?
+
+  requester        User?                @relation("TicketRequester", fields: [requesterId], references: [id])
+  assignee         User?                @relation("TicketAssignee", fields: [assigneeId], references: [id])
+  assignedTeam     Team?                @relation(fields: [assignedTeamId], references: [id])
+  category         Category?            @relation(fields: [categoryId], references: [id])
+  messages         TicketMessage[]
+  events           TicketEvent[]
+  access           TicketAccess[]
+  followers        TicketFollower[]
+  slaInstances     SlaInstance[]
+  attachments      Attachment[]
+  customFieldValues CustomFieldValue[]
+  emailThreads     TicketEmailThread[]
+  inboundEmails    InboundEmailReceipt[]
+  notifications    Notification[]
+  notificationOutbox NotificationOutbox[]
+  automationExecutions AutomationExecution[]
+}
+
+model TicketMessage {
+  id        String      @id @default(cuid())
+  ticketId  String
+  authorId  String
+  type      MessageType @default(PUBLIC)
+  body      String
+  createdAt DateTime    @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id])
+  author User   @relation(fields: [authorId], references: [id])
+}
+
+model TicketEvent {
+  id          String   @id @default(cuid())
+  ticketId    String
+  type        String
+  payload     Json?
+  createdAt   DateTime @default(now())
+  createdById String?
+
+  ticket    Ticket @relation(fields: [ticketId], references: [id])
+  createdBy User?  @relation(fields: [createdById], references: [id])
+}
+
+model TicketAccess {
+  id          String      @id @default(cuid())
+  ticketId    String
+  teamId      String
+  accessLevel AccessLevel @default(READ)
+  createdAt   DateTime    @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id])
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  @@unique([ticketId, teamId])
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  parentId    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  parent       Category?     @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children     Category[]    @relation("CategoryHierarchy")
+  tickets      Ticket[]
+  customFields CustomField[]
+}
+
+model RoutingRule {
+  id         String   @id @default(cuid())
+  name       String
+  keywords   String[]
+  teamId     String
+  priority   Int      @default(100)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  assigneeId String?
+
+  team     Team  @relation(fields: [teamId], references: [id])
+  assignee User? @relation(fields: [assigneeId], references: [id])
+}
+
+model TicketFollower {
+  id        String   @id @default(cuid())
+  ticketId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([ticketId, userId])
+}
+
+model NotificationOutbox {
+  id        String          @id @default(cuid())
+  channel   NotificationChannel @default(EMAIL)
+  status    OutboxStatus    @default(PENDING)
+  eventType String
+  toEmail   String
+  toUserId  String?
+  ticketId  String?
+  subject   String
+  body      String
+  payload   Json?
+  attempts  Int             @default(0)
+  lastError String?
+  sentAt    DateTime?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  toUser User?   @relation(fields: [toUserId], references: [id])
+  ticket Ticket? @relation(fields: [ticketId], references: [id])
+}
+
+model Attachment {
+  id            String               @id @default(cuid())
+  ticketId      String
+  uploadedById  String
+  fileName      String
+  contentType   String
+  sizeBytes     Int
+  storageKey    String
+  scanStatus    AttachmentScanStatus @default(PENDING)
+  scanCheckedAt DateTime?
+  scanError     String?
+  createdAt     DateTime             @default(now())
+
+  ticket     Ticket @relation(fields: [ticketId], references: [id])
+  uploadedBy User   @relation(fields: [uploadedById], references: [id])
+}
+
+model SlaInstance {
+  id                           String         @id @default(cuid())
+  ticketId                     String
+  priority                     TicketPriority
+  firstResponseDueAt           DateTime?
+  resolutionDueAt              DateTime?
+  pausedAt                     DateTime?
+  nextDueAt                    DateTime?
+  firstResponseBreachedAt      DateTime?
+  resolutionBreachedAt         DateTime?
+  createdAt                    DateTime       @default(now())
+  updatedAt                    DateTime       @updatedAt
+  firstResponseAtRiskNotifiedAt DateTime?
+  resolutionAtRiskNotifiedAt   DateTime?
+  policyConfigId               String?
+
+  ticket       Ticket           @relation(fields: [ticketId], references: [id])
+  policyConfig SlaPolicyConfig? @relation(fields: [policyConfigId], references: [id])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String?
+  ticketId  String?
+  actorId   String?
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user   User    @relation("NotificationUser", fields: [userId], references: [id])
+  ticket Ticket? @relation(fields: [ticketId], references: [id])
+  actor  User?   @relation("NotificationActor", fields: [actorId], references: [id])
+}
+
+model SavedView {
+  id        String   @id @default(cuid())
+  name      String
+  filters   Json
+  userId    String?
+  teamId    String?
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User? @relation(fields: [userId], references: [id])
+  team Team? @relation(fields: [teamId], references: [id])
+}
+
+model CannedResponse {
+  id        String   @id @default(cuid())
+  name      String
+  content   String
+  userId    String?
+  teamId    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User? @relation(fields: [userId], references: [id])
+  team Team? @relation(fields: [teamId], references: [id])
+}
+
+model CustomField {
+  id         String   @id @default(cuid())
+  name       String
+  fieldType  String
+  options    Json?
+  isRequired Boolean  @default(false)
+  teamId     String?
+  categoryId String?
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  team     Team?              @relation(fields: [teamId], references: [id])
+  category Category?          @relation(fields: [categoryId], references: [id])
+  values   CustomFieldValue[]
+}
+
+model CustomFieldValue {
+  id            String   @id @default(cuid())
+  ticketId      String
+  customFieldId String
+  value         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  ticket      Ticket      @relation(fields: [ticketId], references: [id])
+  customField CustomField @relation(fields: [customFieldId], references: [id])
+
+  @@unique([ticketId, customFieldId])
+}
+
+model AutomationRule {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  trigger     String
+  conditions  Json
+  actions     Json
+  isActive    Boolean  @default(true)
+  priority    Int      @default(0)
+  teamId      String?
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  team       Team?                 @relation(fields: [teamId], references: [id])
+  createdBy  User                  @relation(fields: [createdById], references: [id])
+  executions AutomationExecution[]
+}
+
+model AutomationExecution {
+  id         String   @id @default(cuid())
+  ruleId     String
+  ticketId   String
+  success    Boolean
+  error      String?
+  executedAt DateTime @default(now())
+  trigger    String   @default("STATUS_CHANGED")
+
+  rule   AutomationRule @relation(fields: [ruleId], references: [id])
+  ticket Ticket         @relation(fields: [ticketId], references: [id])
+}
+
+model SlaPolicyConfig {
+  id                    String          @id @default(cuid())
+  name                  String
+  description           String?
+  isDefault             Boolean         @default(false)
+  enabled               Boolean         @default(true)
+  businessHoursOnly     Boolean         @default(true)
+  escalationEnabled     Boolean         @default(true)
+  escalationAfterPercent Int            @default(80)
+  breachNotifyRoles     SlaNotifyRole[]
+  createdById           String?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @default(now()) @updatedAt
+
+  createdBy   User?                   @relation(fields: [createdById], references: [id])
+  targets     SlaPolicyConfigTarget[]
+  assignments SlaPolicyAssignment[]
+  instances   SlaInstance[]
+}
+
+model SlaPolicyConfigTarget {
+  id                 String         @id @default(cuid())
+  policyConfigId     String
+  priority           TicketPriority
+  firstResponseHours Int
+  resolutionHours    Int
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @default(now()) @updatedAt
+
+  policyConfig SlaPolicyConfig @relation(fields: [policyConfigId], references: [id])
+
+  @@unique([policyConfigId, priority])
+}
+
+model SlaPolicyAssignment {
+  id             String   @id @default(cuid())
+  policyConfigId String
+  teamId         String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
+
+  policyConfig SlaPolicyConfig @relation(fields: [policyConfigId], references: [id])
+  team         Team            @relation(fields: [teamId], references: [id])
+
+  @@unique([policyConfigId, teamId])
+}
+
+model SlaBusinessHoursSetting {
+  id        String   @id @default("global")
+  timezone  String   @default("UTC")
+  schedule  Json
+  holidays  Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model AdminAuditEvent {
+  id          String   @id @default(cuid())
+  type        String
+  payload     Json?
+  teamId      String?
+  createdById String?
+  createdAt   DateTime @default(now())
+  actorEmail  String?
+  actorName   String?
+  teamName    String?
+
+  team      Team? @relation(fields: [teamId], references: [id])
+  createdBy User? @relation(fields: [createdById], references: [id])
+}
+
+model IdempotencyRequest {
+  id           String           @id @default(cuid())
+  key          String           @unique
+  method       String
+  route        String
+  actorId      String
+  requestHash  String
+  state        IdempotencyState @default(IN_PROGRESS)
+  statusCode   Int?
+  responseBody Json?
+  expiresAt    DateTime
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+}
+
+model InboundEmailReceipt {
+  id        String   @id @default(cuid())
+  messageId String   @unique
+  fromEmail String
+  subject   String
+  ticketId  String?
+  threaded  Boolean?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ticket Ticket? @relation(fields: [ticketId], references: [id])
+}
+
+model TicketEmailThread {
+  id                    String   @id @default(cuid())
+  ticketId              String
+  replyToken            String   @unique @db.VarChar(255)
+  canonicalSubject      String   @db.VarChar(255)
+  rootInboundMessageId  String?  @db.VarChar(255)
+  lastInboundMessageId  String?  @db.VarChar(255)
+  lastInboundAt         DateTime?
+  lastOutboundMessageId String?  @db.VarChar(255)
+  lastOutboundAt        DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @default(now()) @updatedAt
+
+  ticket Ticket @relation(fields: [ticketId], references: [id])
+}
