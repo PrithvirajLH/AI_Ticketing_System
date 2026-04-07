@@ -24,7 +24,8 @@ const STEP_COLORS: Record<number, string> = {
   2: "border-blue-500",
   3: "border-yellow-500",
   4: "border-green-500",
-  5: "border-cyan-500",
+  5: "border-orange-500",
+  6: "border-cyan-500",
 };
 
 const STEP_LABELS: Record<number, string> = {
@@ -32,7 +33,8 @@ const STEP_LABELS: Record<number, string> = {
   2: "Dept Classification",
   3: "Confidence Gate",
   4: "Ticket Generation",
-  5: "Save to Database",
+  5: "Route to Team",
+  6: "Save to Database",
 };
 
 export function StepCard({ data }: StepCardProps) {
@@ -211,10 +213,23 @@ function StepSummary({ step, parsed }: { step: number; parsed: unknown }) {
   if (step === 5) {
     return (
       <div className="text-xs space-y-1">
-        <div><span className="text-muted-foreground">Ticket ID:</span> <span className="text-cyan-400 font-mono">{d.ticketId as string}</span></div>
-        <div><span className="text-muted-foreground">Ticket #:</span> <span className="text-white font-medium">{d.ticketNumber as number}</span></div>
+        <div><span className="text-muted-foreground">Team:</span> <span className="font-medium text-orange-600">{d.team as string}</span></div>
+        <div><span className="text-muted-foreground">Method:</span> {d.method as string}</div>
+        {d.matchedRule ? (
+          <div><span className="text-muted-foreground">Matched Rule:</span> {d.matchedRule as string}</div>
+        ) : null}
+        <div><span className="text-muted-foreground">Assignee:</span> {d.assignee as string}</div>
+      </div>
+    );
+  }
+
+  if (step === 6) {
+    return (
+      <div className="text-xs space-y-1">
+        <div><span className="text-muted-foreground">Ticket ID:</span> <span className="text-cyan-600 font-mono">{d.ticketId as string}</span></div>
+        <div><span className="text-muted-foreground">Ticket #:</span> <span className="font-medium">{d.ticketNumber as number}</span></div>
         <div><span className="text-muted-foreground">Display ID:</span> {d.displayId as string}</div>
-        <div><span className="text-muted-foreground">SLA Created:</span> <span className={d.slaCreated ? "text-green-400" : "text-red-400"}>{d.slaCreated ? "Yes" : "No"}</span></div>
+        <div><span className="text-muted-foreground">SLA Created:</span> <span className={d.slaCreated ? "text-green-600" : "text-red-600"}>{d.slaCreated ? "Yes" : "No"}</span></div>
       </div>
     );
   }

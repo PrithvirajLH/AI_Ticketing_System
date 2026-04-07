@@ -104,7 +104,7 @@ export function AssignControl({
 
         {options.length > 0 ? (
           <Select
-            onValueChange={(v) => handleAssign(v === "unassigned" ? null : (v ?? null))}
+            onValueChange={(v) => handleAssign(v === "unassigned" ? null : (v as string ?? null))}
           >
             <SelectTrigger className="w-[180px] h-9">
               <SelectValue placeholder="Reassign..." />

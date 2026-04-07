@@ -2,17 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import {
   MessageSquarePlus,
   Inbox,
   LayoutDashboard,
   Bug,
-  Settings,
   ChevronLeft,
   ChevronRight,
+  LogOut,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface NavItem {
   href: string;
@@ -48,8 +50,18 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
 export function Sidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
   const [collapsed, setCollapsed] = useState(false);
 
   const mainItems = NAV_ITEMS.filter((i) => i.section === "main");
@@ -128,11 +140,42 @@ export function Sidebar() {
         ) : null}
       </nav>
 
-      {/* Collapse toggle */}
-      <div className="border-t p-2">
+      {/* User + Collapse */}
+      <div className="border-t p-2 space-y-1">
+        {session?.user ? (
+          <div className={cn(
+            "flex items-center gap-2 rounded-md px-2 py-2",
+            collapsed ? "justify-center" : ""
+          )}>
+            <Avatar className="h-7 w-7 shrink-0">
+              <AvatarFallback className="text-xs">
+                {getInitials(session.user.displayName ?? session.user.name ?? "?")}
+              </AvatarFallback>
+            </Avatar>
+            {!collapsed ? (
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium truncate">
+                  {session.user.displayName ?? session.user.name}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {session.user.role ?? "User"}
+                </p>
+              </div>
+            ) : null}
+            {!collapsed ? (
+              <button
+                onClick={() => signOut({ callbackUrl: "/login" })}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                title="Sign out"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+              </button>
+            ) : null}
+          </div>
+        ) : null}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="flex items-center justify-center w-full rounded-md py-2 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          className="flex items-center justify-center w-full rounded-md py-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
         >
           {collapsed ? (
             <ChevronRight className="h-4 w-4" />

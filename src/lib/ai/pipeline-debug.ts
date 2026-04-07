@@ -1,5 +1,6 @@
 import { runAgent, parseAgentResponse } from "./foundry-client";
 import { createTicket, createSlaInstance } from "./tools/ticket-tools";
+import { routeTicket } from "@/lib/routing/engine";
 import {
   IntentResultSchema,
   ClassificationResultSchema,
@@ -216,10 +217,61 @@ IMPORTANT: Return ONLY the JSON object, nothing else. Format:
     return { steps, finalStatus: "error", totalLatencyMs: Date.now() - startTime, errorMessage: `Step 4 failed: ${steps[3].error}` };
   }
 
-  // ── Step 5: Save to Database ───────────────────────────────────────────
+  // ── Step 5: Route to Team ────────────────────────────────────────────
 
   const step5Start = Date.now();
   const requesterId = input.userId ?? "unknown";
+
+  let routingResult;
+  try {
+    routingResult = await routeTicket({
+      subject: ticketDraft.subject,
+      description: ticketDraft.description,
+      aiTeamId: ticketDraft.assignedTeamId || null,
+      aiTeamName: finalClassification.department.name,
+    });
+
+    // Override the draft with the routed team
+    ticketDraft = {
+      ...ticketDraft,
+      assignedTeamId: routingResult.teamId,
+    };
+
+    steps.push({
+      step: 5,
+      name: "Route to Team",
+      agentName: "routing-engine",
+      input: `Subject: ${ticketDraft.subject}\nAI Team: ${finalClassification.department.name}`,
+      rawOutput: JSON.stringify(routingResult, null, 2),
+      parsed: {
+        team: routingResult.teamName,
+        method: routingResult.method,
+        matchedRule: routingResult.matchedRule,
+        assignee: routingResult.assigneeId ?? "Queue (unassigned)",
+      },
+      toolsCalled: ["route_ticket"],
+      latencyMs: Date.now() - step5Start,
+      status: "success",
+    });
+  } catch (error) {
+    steps.push({
+      step: 5,
+      name: "Route to Team",
+      agentName: "routing-engine",
+      input: ticketDraft.subject,
+      rawOutput: "",
+      parsed: null,
+      toolsCalled: [],
+      latencyMs: Date.now() - step5Start,
+      status: "error",
+      error: error instanceof Error ? error.message : "Routing failed",
+    });
+    // Don't fail — continue with AI's team assignment
+  }
+
+  // ── Step 6: Save to Database ───────────────────────────────────────────
+
+  const step6Start = Date.now();
 
   // Build AI analysis from pipeline data
   const aiAnalysis = {
@@ -229,10 +281,12 @@ IMPORTANT: Return ONLY the JSON object, nothing else. Format:
     urgency: intent.urgencySignals.length > 0 ? intent.urgencySignals.join(", ") : "None indicated",
     intent: intent.intent,
     requestType: intent.requestType,
-    department: finalClassification.department.name,
+    department: routingResult?.teamName ?? finalClassification.department.name,
     departmentConfidence: finalClassification.department.confidence,
     category: finalClassification.category?.name ?? null,
     reasoning: finalClassification.reasoning,
+    routingMethod: routingResult?.method ?? "ai_classification",
+    matchedRule: routingResult?.matchedRule ?? null,
   };
 
   const ticketResult = await createTicket({
@@ -244,18 +298,18 @@ IMPORTANT: Return ONLY the JSON object, nothing else. Format:
 
   if (!ticketResult.success) {
     steps.push({
-      step: 5,
+      step: 6,
       name: "Save to Database",
       agentName: "system",
       input: JSON.stringify(ticketDraft, null, 2),
       rawOutput: ticketResult.error,
       parsed: null,
       toolsCalled: ["create_ticket"],
-      latencyMs: Date.now() - step5Start,
+      latencyMs: Date.now() - step6Start,
       status: "error",
       error: ticketResult.error,
     });
-    return { steps, finalStatus: "error", totalLatencyMs: Date.now() - startTime, errorMessage: `Step 5 failed: ${ticketResult.error}` };
+    return { steps, finalStatus: "error", totalLatencyMs: Date.now() - startTime, errorMessage: `Step 6 failed: ${ticketResult.error}` };
   }
 
   const ticket = ticketResult.data;
@@ -263,8 +317,22 @@ IMPORTANT: Return ONLY the JSON object, nothing else. Format:
   // Create SLA instance
   const slaResult = await createSlaInstance(ticket.id, ticketDraft.priority);
 
+  // If routing assigned someone, update the ticket
+  if (routingResult?.assigneeId) {
+    const { getSupabase } = await import("@/lib/db/supabase");
+    const sb = getSupabase();
+    await sb
+      .from("Ticket")
+      .update({
+        assigneeId: routingResult.assigneeId,
+        status: "ASSIGNED",
+        updatedAt: new Date().toISOString(),
+      })
+      .eq("id", ticket.id);
+  }
+
   steps.push({
-    step: 5,
+    step: 6,
     name: "Save to Database",
     agentName: "system",
     input: JSON.stringify(ticketDraft, null, 2),
@@ -274,9 +342,10 @@ IMPORTANT: Return ONLY the JSON object, nothing else. Format:
       ticketNumber: ticket.number,
       displayId: ticket.displayId,
       slaCreated: slaResult.success,
+      assignedTo: routingResult?.assigneeId ?? "Queue",
     },
     toolsCalled: ["create_ticket", "create_sla_instance"],
-    latencyMs: Date.now() - step5Start,
+    latencyMs: Date.now() - step6Start,
     status: "success",
   });
 

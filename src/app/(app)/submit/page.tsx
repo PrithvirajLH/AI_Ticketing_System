@@ -11,7 +11,7 @@ import { TicketCreated } from "@/components/chat/ticket-created";
 type ViewState =
   | { phase: "input" }
   | { phase: "processing"; steps: PipelineStep[] }
-  | { phase: "preview"; ticket: TicketData; confidence: number; teamName: string; categoryName: string; steps: StepData[] }
+  | { phase: "preview"; ticket: TicketData; confidence: number; teamName: string; categoryName: string; aiAnalysis: Record<string, unknown>; steps: StepData[] }
   | { phase: "created"; ticket: CreatedTicket }
   | { phase: "error"; message: string }
   | { phase: "clarification"; question: string; originalText: string };
@@ -127,12 +127,34 @@ export default function SubmitPage() {
             ?.overallConfidence ?? 0.8;
 
         // Extract team and category names from classification
+        const step1 = completedSteps.find((s: { step: number }) => s.step === 1);
         const classification = step2?.parsed as {
-          department?: { name?: string };
+          department?: { name?: string; confidence?: number };
           category?: { name?: string };
+          reasoning?: string;
         } | undefined;
+        const intent = step1?.parsed as {
+          intent?: string;
+          requestType?: string;
+          urgencySignals?: string[];
+        } | undefined;
+
         const teamName = classification?.department?.name ?? ticket.assignedTeamId;
         const categoryName = classification?.category?.name ?? ticket.categoryId ?? "—";
+
+        // Build AI analysis for storage
+        const aiAnalysis = {
+          what: intent?.intent ?? ticket.subject,
+          who: `Requester ID: ${CURRENT_USER_ID}`,
+          context: classification?.reasoning ?? "",
+          urgency: intent?.urgencySignals?.length ? intent.urgencySignals.join(", ") : "None indicated",
+          intent: intent?.intent ?? "",
+          requestType: intent?.requestType ?? "QUESTION",
+          department: teamName,
+          departmentConfidence: classification?.department?.confidence ?? 0,
+          category: classification?.category?.name ?? null,
+          reasoning: classification?.reasoning ?? "",
+        };
 
         setView({
           phase: "preview",
@@ -140,6 +162,7 @@ export default function SubmitPage() {
           confidence,
           teamName,
           categoryName,
+          aiAnalysis,
           steps: completedSteps,
         });
       } else {
@@ -169,6 +192,8 @@ export default function SubmitPage() {
         body: JSON.stringify({
           ...ticket,
           requesterId: CURRENT_USER_ID,
+          rawText: lastText,
+          aiAnalysis: view.aiAnalysis,
         }),
       });
 

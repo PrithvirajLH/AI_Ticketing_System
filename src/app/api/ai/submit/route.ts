@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { createTicket, createSlaInstance } from "@/lib/ai/tools/ticket-tools";
+import { routeTicket } from "@/lib/routing/engine";
 
 const SubmitSchema = z.object({
   subject: z.string(),
@@ -12,6 +13,8 @@ const SubmitSchema = z.object({
   displayId: z.string(),
   tags: z.array(z.string()),
   requesterId: z.string(),
+  rawText: z.string().optional(),
+  aiAnalysis: z.record(z.unknown()).optional(),
 });
 
 export async function POST(request: Request) {
@@ -26,9 +29,24 @@ export async function POST(request: Request) {
       );
     }
 
-    const { requesterId, ...draft } = parsed.data;
+    const { requesterId, rawText, aiAnalysis, ...draft } = parsed.data;
 
-    const ticketResult = await createTicket({ draft, requesterId });
+    // Route the ticket
+    const routing = await routeTicket({
+      subject: draft.subject,
+      description: draft.description,
+      aiTeamId: draft.assignedTeamId || null,
+    });
+
+    draft.assignedTeamId = routing.teamId;
+
+    const ticketResult = await createTicket({
+      draft,
+      requesterId,
+      rawText,
+      aiAnalysis: aiAnalysis as Parameters<typeof createTicket>[0]["aiAnalysis"],
+    });
+
     if (!ticketResult.success) {
       return NextResponse.json(
         { error: ticketResult.error },
@@ -37,6 +55,20 @@ export async function POST(request: Request) {
     }
 
     const ticket = ticketResult.data;
+
+    // Auto-assign if routing picked someone
+    if (routing.assigneeId) {
+      const { getSupabase } = await import("@/lib/db/supabase");
+      const supabase = getSupabase();
+      await supabase
+        .from("Ticket")
+        .update({
+          assigneeId: routing.assigneeId,
+          status: "ASSIGNED",
+          updatedAt: new Date().toISOString(),
+        })
+        .eq("id", ticket.id);
+    }
 
     // Create SLA tracking
     await createSlaInstance(ticket.id, draft.priority);
@@ -49,6 +81,7 @@ export async function POST(request: Request) {
         displayId: ticket.displayId,
         subject: draft.subject,
         priority: draft.priority,
+        team: routing.teamName,
       },
     }, { status: 201 });
   } catch (error) {
