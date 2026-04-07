@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSNHC Ticketing System — User Manual</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Calibri, Arial, sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.6;
+    color: #1a1a1a;
+    background: #fff;
+    padding: 0 8px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  /* ── Cover ── */
+  .cover {
+    page-break-after: always;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    min-height: 92vh; text-align: center;
+    border: 3px solid #0f766e; border-radius: 10px;
+    padding: 50px 40px; margin-top: 16px;
+    background: linear-gradient(135deg, #f0fdfa 0%, #ffffff 50%, #f0f9ff 100%);
+  }
+  .cover h1 { font-size: 30pt; color: #0f766e; margin-bottom: 6px; letter-spacing: -0.5px; }
+  .cover .subtitle { font-size: 15pt; color: #555; margin-bottom: 24px; }
+  .cover .version-badge {
+    display: inline-block; background: #0f766e; color: #fff;
+    padding: 5px 16px; border-radius: 4px; font-size: 9.5pt; font-weight: 600; margin: 12px 0;
+  }
+  .cover .meta { font-size: 9.5pt; color: #666; line-height: 2; margin-top: 24px; }
+
+  /* ── Headings ── */
+  h2 {
+    font-size: 17pt; color: #0f766e; border-bottom: 2.5px solid #0f766e;
+    padding-bottom: 4px; margin: 28px 0 12px 0; page-break-after: avoid;
+  }
+  h3 { font-size: 12.5pt; color: #1e293b; margin: 20px 0 8px 0; page-break-after: avoid; }
+  h4 { font-size: 10.5pt; color: #0f766e; margin: 14px 0 5px 0; font-weight: 600; page-break-after: avoid; }
+
+  p { margin: 5px 0; }
+  ul, ol { margin: 5px 0 5px 20px; }
+  li { margin: 3px 0; }
+
+  /* ── Role badges ── */
+  .role { display: inline-block; padding: 1px 7px; border-radius: 3px; font-size: 8pt; font-weight: 700; letter-spacing: 0.3px; vertical-align: middle; }
+  .role-employee  { background: #dbeafe; color: #1e40af; }
+  .role-agent     { background: #d1fae5; color: #065f46; }
+  .role-lead      { background: #fef3c7; color: #92400e; }
+  .role-admin     { background: #ede9fe; color: #5b21b6; }
+  .role-owner     { background: #fce7f3; color: #9d174d; }
+  .roles-row { margin: 4px 0 8px 0; }
+  .roles-row .role { margin-right: 3px; }
+
+  /* ── Tables ── */
+  table {
+    width: 100%; border-collapse: collapse; margin: 8px 0 14px 0;
+    font-size: 9pt; page-break-inside: auto;
+  }
+  tr { page-break-inside: avoid; }
+  th, td { border: 1px solid #d1d5db; padding: 5px 7px; text-align: left; vertical-align: top; }
+  th { background: #0f766e; color: #fff; font-weight: 600; font-size: 8.5pt; text-transform: uppercase; letter-spacing: 0.3px; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  td code, p code, li code {
+    background: #ecfdf5; padding: 1px 4px; border-radius: 3px;
+    font-family: 'Cascadia Code', Consolas, monospace; font-size: 8.5pt; color: #0f766e;
+  }
+
+  /* ── Callouts ── */
+  .callout {
+    border-left: 4px solid; padding: 9px 12px; margin: 10px 0;
+    border-radius: 0 4px 4px 0; font-size: 9.5pt; page-break-inside: avoid;
+  }
+  .callout-info    { border-color: #0284c7; background: #e0f2fe; }
+  .callout-tip     { border-color: #0f766e; background: #ecfdf5; }
+  .callout-warning { border-color: #d97706; background: #fef9c3; }
+  .callout-danger  { border-color: #dc2626; background: #fee2e2; }
+  .callout strong  { display: block; margin-bottom: 2px; }
+
+  /* ── Section numbers ── */
+  .sn {
+    display: inline-block; background: #0f766e; color: #fff;
+    width: 26px; height: 26px; line-height: 26px; text-align: center;
+    border-radius: 50%; font-weight: 700; font-size: 12pt; margin-right: 7px; vertical-align: middle;
+  }
+
+  /* ── Steps ── */
+  .steps { counter-reset: step; list-style: none; margin-left: 0; padding-left: 0; }
+  .steps li { counter-increment: step; padding: 6px 0 6px 36px; position: relative; border-bottom: 1px solid #e5e7eb; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 6px;
+    width: 24px; height: 24px; line-height: 24px; text-align: center;
+    background: #0f766e; color: #fff; border-radius: 50%; font-size: 9pt; font-weight: 700;
+  }
+  .steps li:last-child { border-bottom: none; }
+
+  /* ── Keyboard shortcuts ── */
+  kbd {
+    display: inline-block; padding: 1px 6px; background: #f1f5f9;
+    border: 1px solid #cbd5e1; border-radius: 3px; font-family: monospace;
+    font-size: 8.5pt; box-shadow: 0 1px 0 #94a3b8;
+  }
+
+  /* ── Permission matrix ── */
+  .perm-yes { color: #059669; font-weight: 700; }
+  .perm-no  { color: #dc2626; }
+  .perm-partial { color: #d97706; font-weight: 600; }
+
+  /* ── TOC ── */
+  .toc { page-break-after: always; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { padding: 5px 0; border-bottom: 1px dotted #d1d5db; font-size: 10.5pt; }
+  .toc li a { color: #0f766e; text-decoration: none; }
+  .toc .sub { padding-left: 22px; font-size: 9.5pt; border-bottom: none; padding: 2px 0 2px 22px; }
+
+  .page-break { page-break-before: always; }
+
+  /* ── Screenshots placeholder ── */
+  .screenshot {
+    border: 2px dashed #cbd5e1; border-radius: 8px; padding: 24px;
+    text-align: center; color: #94a3b8; font-size: 9pt; margin: 10px 0;
+    background: #f8fafc;
+  }
+
+  @media print {
+    body { padding: 0; max-width: none; }
+    .cover { border: 3px solid #0f766e; background: #fff; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- COVER                                                         -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="cover">
+  <h1>CSNHC Ticketing System</h1>
+  <div class="subtitle">Complete User Manual</div>
+  <div style="font-size:11pt; color:#64748b;">Creative Solutions in Healthcare</div>
+  <div class="version-badge">VERSION 1.0 &mdash; MARCH 2026</div>
+  <div class="meta">
+    <strong>Covers All Roles:</strong> Employee &bull; Agent &bull; Lead &bull; Team Admin &bull; Owner<br>
+    <strong>Features:</strong> Tickets &bull; SLA &bull; Automation &bull; Routing &bull; Reports &bull; Notifications<br>
+    <strong>Last Updated:</strong> March 24, 2026
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- TOC                                                           -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="toc">
+<h2>Table of Contents</h2>
+<ul>
+  <li><a href="#s1"><span class="sn">1</span> Getting Started</a></li>
+  <li class="sub">1.1 Logging In &nbsp;|&nbsp; 1.2 Understanding Your Role &nbsp;|&nbsp; 1.3 Navigation Overview</li>
+  <li><a href="#s2"><span class="sn">2</span> Role Overview &amp; Permissions Matrix</a></li>
+  <li><a href="#s3"><span class="sn">3</span> Dashboard</a></li>
+  <li><a href="#s4"><span class="sn">4</span> Creating Tickets</a></li>
+  <li><a href="#s5"><span class="sn">5</span> Viewing &amp; Filtering Tickets</a></li>
+  <li class="sub">5.1 Ticket List &nbsp;|&nbsp; 5.2 Filters &nbsp;|&nbsp; 5.3 Saved Views &nbsp;|&nbsp; 5.4 Sorting</li>
+  <li><a href="#s6"><span class="sn">6</span> Ticket Detail &amp; Conversation</a></li>
+  <li class="sub">6.1 Conversation &nbsp;|&nbsp; 6.2 Properties &nbsp;|&nbsp; 6.3 Timeline &nbsp;|&nbsp; 6.4 Attachments &nbsp;|&nbsp; 6.5 Custom Fields</li>
+  <li><a href="#s7"><span class="sn">7</span> Ticket Workflow &amp; Status Transitions</a></li>
+  <li><a href="#s8"><span class="sn">8</span> Assignment, Transfer &amp; Bulk Operations</a></li>
+  <li><a href="#s9"><span class="sn">9</span> SLA (Service Level Agreements)</a></li>
+  <li><a href="#s10"><span class="sn">10</span> Triage Board (Kanban)</a></li>
+  <li><a href="#s11"><span class="sn">11</span> Notifications</a></li>
+  <li><a href="#s12"><span class="sn">12</span> Reports &amp; Analytics</a></li>
+  <li><a href="#s13"><span class="sn">13</span> Team Management</a></li>
+  <li><a href="#s14"><span class="sn">14</span> Admin: Routing Rules</a></li>
+  <li><a href="#s15"><span class="sn">15</span> Admin: Automation Rules</a></li>
+  <li><a href="#s16"><span class="sn">16</span> Admin: Custom Fields</a></li>
+  <li><a href="#s17"><span class="sn">17</span> Admin: Categories</a></li>
+  <li><a href="#s18"><span class="sn">18</span> Admin: Audit Log</a></li>
+  <li><a href="#s19"><span class="sn">19</span> Canned Responses</a></li>
+  <li><a href="#s20"><span class="sn">20</span> Keyboard Shortcuts &amp; Command Palette</a></li>
+  <li><a href="#s21"><span class="sn">21</span> Email Integration</a></li>
+  <li><a href="#s22"><span class="sn">22</span> Frequently Asked Questions</a></li>
+</ul>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 1                                                     -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="s1"><span class="sn">1</span> Getting Started</h2>
+
+<h3>1.1 &mdash; Logging In</h3>
+<p>The CSNHC Ticketing System uses <strong>Microsoft Azure Active Directory (SSO)</strong> for authentication. To sign in:</p>
+<ol class="steps">
+  <li>Navigate to the ticketing system URL provided by your IT department.</li>
+  <li>Click <strong>"Sign in with Microsoft"</strong>.</li>
+  <li>Enter your organizational Microsoft credentials (email and password).</li>
+  <li>Complete any multi-factor authentication (MFA) if prompted.</li>
+  <li>You will be redirected to your personalized dashboard.</li>
+</ol>
+
+<div class="callout callout-info">
+  <strong>First-Time Users</strong>
+  On your first login, the system automatically creates your profile from your Microsoft Graph data (display name, email, department, location). Your default role is <strong>Employee</strong>.
+</div>
+
+<h3>1.2 &mdash; Understanding Your Role</h3>
+<p>Your role determines what you can see and do in the system. There are <strong>5 roles</strong>, listed from least to most access:</p>
+
+<table>
+<tr><th>Role</th><th>Who</th><th>Summary</th></tr>
+<tr>
+  <td><span class="role role-employee">EMPLOYEE</span></td>
+  <td>All staff members</td>
+  <td>Create tickets, track your own requests, add messages and attachments to your tickets.</td>
+</tr>
+<tr>
+  <td><span class="role role-agent">AGENT</span></td>
+  <td>Support team members</td>
+  <td>Everything Employee can do, plus: view and work on team tickets, assign tickets to yourself, use canned responses, bulk operations.</td>
+</tr>
+<tr>
+  <td><span class="role role-lead">LEAD</span></td>
+  <td>Team leads / supervisors</td>
+  <td>Everything Agent can do, plus: Triage board, reports &amp; analytics, team management, SLA monitoring, manager views.</td>
+</tr>
+<tr>
+  <td><span class="role role-admin">TEAM ADMIN</span></td>
+  <td>Department administrators</td>
+  <td>Everything Lead can do, plus: configure routing rules, automation rules, custom fields, audit logs. Scoped to their assigned team.</td>
+</tr>
+<tr>
+  <td><span class="role role-owner">OWNER</span></td>
+  <td>Platform administrators</td>
+  <td>Unrestricted access across all teams. Can manage categories, assign roles, configure all system settings.</td>
+</tr>
+</table>
+
+<h3>1.3 &mdash; Navigation Overview</h3>
+
+<h4>Main Sidebar (All Roles)</h4>
+<table>
+<tr><th>Menu Item</th><th style="width:45%">Visible To</th></tr>
+<tr><td><strong>Dashboard</strong></td><td><span class="role role-employee">EMPLOYEE</span> <span class="role role-agent">AGENT</span> <span class="role role-lead">LEAD</span> <span class="role role-admin">TEAM ADMIN</span> <span class="role role-owner">OWNER</span></td></tr>
+<tr><td><strong>All Tickets</strong></td><td><span class="role role-agent">AGENT</span> <span class="role role-lead">LEAD</span> <span class="role role-admin">TEAM ADMIN</span> <span class="role role-owner">OWNER</span></td></tr>
+<tr><td>&nbsp;&nbsp;&rarr; Assigned to Me</td><td><span class="role role-agent">AGENT</span> <span class="role role-lead">LEAD</span> <span class="role role-admin">TEAM ADMIN</span> <span class="role role-owner">OWNER</span></td></tr>
+<tr><td>&nbsp;&nbsp;&rarr; Unassigned</td><td><span class="role role-agent">AGENT</span> <span class="role role-lead">LEAD</span> <span class="role role-admin">TEAM ADMIN</span> <span class="role role-owner">OWNER</span></td></tr>
+<tr><td><strong>My Tickets</strong> (Created by Me)</td><td><span class="role role-employee">EMPLOYEE</span> <span class="role role-agent">AGENT</span> <span class="role role-lead">LEAD</span> <span class="role role-admin">TEAM ADMIN</span> <span class="role role-owner">OWNER</span></td></tr>
+<tr><td><strong>Completed</strong></td><td><span class="role role-employee">EMPLOYEE</span> <span class="role role-agent">AGENT</span> <span class="role role-lead">LEAD</span> <span class="role role-admin">TEAM ADMIN</span> <span class="role role-owner">OWNER</span></td></tr>
+<tr><td><strong>Triage Board</strong></td><td><span class="role role-lead">LEAD</span> <span class="role role-admin">TEAM ADMIN</span> <span class="role role-owner">OWNER</span></td></tr>
+<tr><td><strong>Manager Views</strong></td><td><span class="role role-lead">LEAD</span> <span class="role role-admin">TEAM ADMIN</span> <span class="role role-owner">OWNER</span></td></tr>
+<tr><td><strong>Reports</strong></td><td><span class="role role-lead">LEAD</span> <span class="role role-admin">TEAM ADMIN</span> <span class="role role-owner">OWNER</span></td></tr>
+<tr><td><strong>Team</strong></td><td><span class="role role-lead">LEAD</span> <span class="role role-admin">TEAM ADMIN</span> <span class="role role-owner">OWNER</span></td></tr>
+<tr><td><strong>SLA Settings</strong></td><td><span class="role role-lead">LEAD</span> <span class="role role-admin">TEAM ADMIN</span> <span class="role role-owner">OWNER</span></td></tr>
+</table>
+
+<h4>Admin Sidebar (Admin Routes Only)</h4>
+<table>
+<tr><th>Menu Item</th><th style="width:45%">Visible To</th></tr>
+<tr><td><strong>SLA Policies</strong></td><td><span class="role role-admin">TEAM ADMIN</span> <span class="role role-owner">OWNER</span></td></tr>
+<tr><td><strong>Routing Rules</strong></td><td><span class="role role-admin">TEAM ADMIN</span> <span class="role role-owner">OWNER</span></td></tr>
+<tr><td><strong>Automation Rules</strong></td><td><span class="role role-admin">TEAM ADMIN</span> <span class="role role-owner">OWNER</span></td></tr>
+<tr><td><strong>Custom Fields</strong></td><td><span class="role role-admin">TEAM ADMIN</span> <span class="role role-owner">OWNER</span></td></tr>
+<tr><td><strong>Audit Log</strong></td><td><span class="role role-admin">TEAM ADMIN</span> <span class="role role-owner">OWNER</span></td></tr>
+<tr><td><strong>Categories</strong></td><td><span class="role role-owner">OWNER</span> only</td></tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 2                                                     -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2 id="s2"><span class="sn">2</span> Complete Permissions Matrix</h2>
+
+<p>This matrix shows exactly what each role can do. Use it as a quick reference.</p>
+
+<table>
+<tr>
+  <th style="width:38%">Feature / Action</th>
+  <th><span class="role role-employee">EMP</span></th>
+  <th><span class="role role-agent">AGT</span></th>
+  <th><span class="role role-lead">LEAD</span></th>
+  <th><span class="role role-admin">ADMIN</span></th>
+  <th><span class="role role-owner">OWNER</span></th>
+</tr>
+<tr><td colspan="6" style="background:#ecfdf5; font-weight:700;">Tickets</td></tr>
+<tr><td>Create ticket</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td></tr>
+<tr><td>View own tickets</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td></tr>
+<tr><td>View team tickets</td><td class="perm-no">No</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td></tr>
+<tr><td>View all tickets (cross-team)</td><td class="perm-no">No</td><td class="perm-no">No</td><td class="perm-no">No</td><td class="perm-no">No</td><td class="perm-yes">Yes</td></tr>
+<tr><td>Add public messages</td><td class="perm-partial">Own</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td></tr>
+<tr><td>Add internal notes</td><td class="perm-no">No</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td></tr>
+<tr><td>Upload attachments</td><td class="perm-partial">Own</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td></tr>
+<tr><td>Change ticket status</td><td class="perm-partial">Own</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td></tr>
+<tr><td>Assign tickets</td><td class="perm-no">No</td><td class="perm-partial">Limited*</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td></tr>
+<tr><td>Transfer to another team</td><td class="perm-no">No</td><td class="perm-partial">Limited*</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td></tr>
+<tr><td>Bulk operations</td><td class="perm-no">No</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td></tr>
+<tr><td>Follow/unfollow tickets</td><td class="perm-partial">Own</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td></tr>
+
+<tr><td colspan="6" style="background:#ecfdf5; font-weight:700;">Views &amp; Analytics</td></tr>
+<tr><td>Dashboard</td><td class="perm-yes">Basic</td><td class="perm-yes">Agent</td><td class="perm-yes">Lead</td><td class="perm-yes">Admin</td><td class="perm-yes">Full</td></tr>
+<tr><td>Triage Board</td><td class="perm-no">No</td><td class="perm-no">No</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td></tr>
+<tr><td>Manager Views</td><td class="perm-no">No</td><td class="perm-no">No</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td></tr>
+<tr><td>Reports &amp; Analytics</td><td class="perm-no">No</td><td class="perm-no">No</td><td class="perm-yes">Team</td><td class="perm-yes">Team</td><td class="perm-yes">All</td></tr>
+<tr><td>Saved Views</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td></tr>
+
+<tr><td colspan="6" style="background:#ecfdf5; font-weight:700;">Team Management</td></tr>
+<tr><td>View team members</td><td class="perm-no">No</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td><td class="perm-yes">Yes</td></tr>
+<tr><td>Add/remove team members</td><td class="perm-no">No</td><td class="perm-no">No</td><td class="perm-no">No</td><td class="perm-yes">Own team</td><td class="perm-yes">Any team</td></tr>
+<tr><td>Change member roles</td><td class="perm-no">No</td><td class="perm-no">No</td><td class="perm-no">No</td><td class="perm-yes">Own team</td><td class="perm-yes">Any team</td></tr>
+<tr><td>Create teams</td><td class="perm-no">No</td><td class="perm-no">No</td><td class="perm-no">No</td><td class="perm-no">No</td><td class="perm-yes">Yes</td></tr>
+<tr><td>Edit team settings</td><td class="perm-no">No</td><td class="perm-no">No</td><td class="perm-no">No</td><td class="perm-yes">Own team</td><td class="perm-yes">Any team</td></tr>
+
+<tr><td colspan="6" style="background:#ecfdf5; font-weight:700;">Administration</td></tr>
+<tr><td>SLA Policies</td><td class="perm-no">No</td><td class="perm-no">No</td><td class="perm-partial">View</td><td class="perm-yes">Own team</td><td class="perm-yes">All</td></tr>
+<tr><td>Routing Rules</td><td class="perm-no">No</td><td class="perm-no">No</td><td class="perm-no">No</td><td class="perm-yes">Own team</td><td class="perm-yes">All</td></tr>
+<tr><td>Automation Rules</td><td class="perm-no">No</td><td class="perm-no">No</td><td class="perm-no">No</td><td class="perm-yes">Own team</td><td class="perm-yes">All</td></tr>
+<tr><td>Custom Fields</td><td class="perm-no">No</td><td class="perm-no">No</td><td class="perm-no">No</td><td class="perm-yes">Own team</td><td class="perm-yes">All</td></tr>
+<tr><td>Audit Log</td><td class="perm-no">No</td><td class="perm-no">No</td><td class="perm-no">No</td><td class="perm-yes">Own team</td><td class="perm-yes">All</td></tr>
+<tr><td>Categories</td><td class="perm-no">No</td><td class="perm-no">No</td><td class="perm-no">No</td><td class="perm-no">No</td><td class="perm-yes">Yes</td></tr>
+<tr><td>User role management</td><td class="perm-no">No</td><td class="perm-no">No</td><td class="perm-no">No</td><td class="perm-no">No</td><td class="perm-yes">Yes</td></tr>
+</table>
+
+<p style="font-size:9pt; color:#64748b;">* <strong>Agent limitations:</strong> Can only assign/transfer tickets that are unassigned or assigned to themselves within their own team.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 3                                                     -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="s3"><span class="sn">3</span> Dashboard</h2>
+
+<p>The dashboard is the first page you see after logging in. Its content adapts to your role:</p>
+
+<h4>Dashboard KPI Cards (visible metrics vary by role)</h4>
+<table>
+<tr><th>KPI Card</th><th>Description</th><th>Visible To</th></tr>
+<tr><td>Open Tickets</td><td>Total tickets not yet resolved or closed</td><td>All roles</td></tr>
+<tr><td>Resolved</td><td>Tickets resolved in the current period</td><td>Agent+</td></tr>
+<tr><td>Unassigned</td><td>Tickets with no assignee</td><td>Agent+</td></tr>
+<tr><td>Assigned to Me</td><td>Your active ticket assignments</td><td>Agent+</td></tr>
+<tr><td>Resolved by Me</td><td>Tickets you personally resolved</td><td>Agent+</td></tr>
+<tr><td>At Risk (SLA)</td><td>Tickets approaching SLA breach</td><td>Lead+</td></tr>
+<tr><td>Overdue (SLA)</td><td>Tickets that have breached SLA</td><td>Lead+</td></tr>
+</table>
+
+<h4>Dashboard Charts</h4>
+<ul>
+  <li><strong>Ticket Activity</strong> &mdash; Line chart showing ticket creation and resolution trends</li>
+  <li><strong>Ticket Volume</strong> &mdash; Bar chart of daily/weekly ticket volume</li>
+  <li><strong>Reopen Rate</strong> &mdash; Tracks how often resolved tickets are reopened</li>
+  <li><strong>Tickets by Age</strong> &mdash; Distribution of open tickets by age bucket (1d, 7d, 30d+)</li>
+  <li><strong>Recent Tickets</strong> &mdash; Quick-access list of your 6 most recent tickets</li>
+</ul>
+
+<div class="callout callout-tip">
+  <strong>Real-Time Updates</strong>
+  Dashboard metrics update automatically in real-time via WebSocket. No manual refresh needed.
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 4                                                     -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="s4"><span class="sn">4</span> Creating Tickets</h2>
+<div class="roles-row">
+  <span class="role role-employee">EMPLOYEE</span>
+  <span class="role role-agent">AGENT</span>
+  <span class="role role-lead">LEAD</span>
+  <span class="role role-admin">TEAM ADMIN</span>
+  <span class="role role-owner">OWNER</span>
+</div>
+
+<p>All users can create tickets. There are two ways:</p>
+
+<h4>Method 1: New Ticket Page</h4>
+<ol class="steps">
+  <li>Click <strong>"+ New Ticket"</strong> in the sidebar or top navigation.</li>
+  <li>Fill in the <strong>Subject</strong> (required, max 200 characters) &mdash; a brief summary of the issue.</li>
+  <li>Fill in the <strong>Description</strong> (required) &mdash; detailed explanation. Supports rich text formatting.</li>
+  <li>Select <strong>Priority</strong>: P1 (Critical), P2 (High), P3 (Medium, default), P4 (Low).</li>
+  <li>Select the <strong>Team/Department</strong> the request should be routed to.</li>
+  <li>Optionally select a <strong>Category</strong> to classify the ticket.</li>
+  <li>Fill in any <strong>Custom Fields</strong> that appear (these vary by team/category).</li>
+  <li>The <strong>Facility</strong> field auto-populates from your Microsoft profile (office location).</li>
+  <li>Click <strong>"Create Ticket"</strong>.</li>
+</ol>
+
+<h4>Method 2: Command Palette</h4>
+<ol class="steps">
+  <li>Press <kbd>Ctrl</kbd>+<kbd>K</kbd> (Windows) or <kbd>Cmd</kbd>+<kbd>K</kbd> (Mac) to open the command palette.</li>
+  <li>Select <strong>"Create Ticket"</strong> from the options.</li>
+  <li>A modal dialog opens with the same form fields.</li>
+</ol>
+
+<div class="callout callout-info">
+  <strong>Automatic Routing</strong>
+  If routing rules are configured, your ticket may be automatically assigned to a specific team and/or agent based on keywords in the subject and description.
+</div>
+
+<h4>After Ticket Creation</h4>
+<ul>
+  <li>A unique <strong>Ticket ID</strong> (e.g., <code>CSH-1234</code>) is assigned automatically.</li>
+  <li>The ticket starts in <strong>NEW</strong> status.</li>
+  <li>SLA timers begin (first response due, resolution due).</li>
+  <li>If round-robin assignment is enabled on the team, an agent is auto-assigned.</li>
+  <li>You are automatically added as a <strong>follower</strong> of the ticket.</li>
+  <li>You will receive <strong>notifications</strong> when the ticket is updated.</li>
+</ul>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 5                                                     -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2 id="s5"><span class="sn">5</span> Viewing &amp; Filtering Tickets</h2>
+
+<h3>5.1 &mdash; Ticket List</h3>
+<p>The ticket list shows a table with the following columns:</p>
+<table>
+<tr><th>Column</th><th>Description</th></tr>
+<tr><td>ID</td><td>Unique ticket identifier (e.g., <code>CSH-1234</code>)</td></tr>
+<tr><td>Subject</td><td>Brief title of the ticket</td></tr>
+<tr><td>Requester</td><td>Person who created the ticket</td></tr>
+<tr><td>Priority</td><td>Color-coded badge: <span style="color:#dc2626;">P1</span>, <span style="color:#ea580c;">P2</span>, <span style="color:#ca8a04;">P3</span>, <span style="color:#64748b;">P4</span></td></tr>
+<tr><td>Status</td><td>Current workflow status (see Section 7)</td></tr>
+<tr><td>Assignee</td><td>Agent responsible for the ticket</td></tr>
+<tr><td>Created</td><td>When the ticket was created</td></tr>
+<tr><td>SLA</td><td>SLA status indicator (On track / Caution / At Risk / Breached)</td></tr>
+</table>
+
+<h4>What You See (by role)</h4>
+<ul>
+  <li><span class="role role-employee">EMPLOYEE</span> &mdash; Only tickets you created ("My Tickets")</li>
+  <li><span class="role role-agent">AGENT</span> &mdash; Your team's tickets (assigned to team, plus unassigned)</li>
+  <li><span class="role role-lead">LEAD</span> &mdash; All tickets for your team</li>
+  <li><span class="role role-admin">TEAM ADMIN</span> &mdash; All tickets for your primary team + access-granted tickets</li>
+  <li><span class="role role-owner">OWNER</span> &mdash; All tickets across all teams</li>
+</ul>
+
+<h4>Preset Scopes (sidebar links)</h4>
+<ul>
+  <li><strong>All Tickets</strong> &mdash; Every ticket you have access to</li>
+  <li><strong>Assigned to Me</strong> &mdash; Tickets where you are the assignee</li>
+  <li><strong>Unassigned</strong> &mdash; Tickets with no assignee in your team</li>
+  <li><strong>Created by Me</strong> &mdash; Tickets you submitted</li>
+  <li><strong>Completed</strong> &mdash; Resolved and closed tickets</li>
+</ul>
+
+<h3>5.2 &mdash; Filters</h3>
+<p>Click the <strong>filter icon</strong> to expand the filter panel. Available filters:</p>
+<table>
+<tr><th>Filter</th><th>Options</th></tr>
+<tr><td>Status</td><td>Multi-select: NEW, TRIAGED, ASSIGNED, IN_PROGRESS, WAITING_ON_REQUESTER, WAITING_ON_VENDOR, REOPENED, RESOLVED, CLOSED</td></tr>
+<tr><td>Priority</td><td>P1, P2, P3, P4</td></tr>
+<tr><td>Team</td><td>Select specific team (Lead+ see team filter)</td></tr>
+<tr><td>Assignee</td><td>Multi-select from team members</td></tr>
+<tr><td>Requester</td><td>Multi-select from all users</td></tr>
+<tr><td>SLA Status</td><td>On Track, At Risk, Breached</td></tr>
+<tr><td>Created Date</td><td>From / To date range</td></tr>
+<tr><td>Updated Date</td><td>From / To date range</td></tr>
+<tr><td>Due Date</td><td>From / To date range</td></tr>
+<tr><td>Text Search</td><td>Searches subject and description</td></tr>
+</table>
+
+<h3>5.3 &mdash; Saved Views</h3>
+<ol class="steps">
+  <li>Configure your desired filters.</li>
+  <li>Click the <strong>"Save View"</strong> button.</li>
+  <li>Enter a name for the view (e.g., "P1 Unresolved" or "My Open Bugs").</li>
+  <li>The view appears in the Saved Views dropdown for quick recall.</li>
+  <li>You can set a view as your <strong>default</strong> so it loads automatically.</li>
+</ol>
+
+<h3>5.4 &mdash; Sorting</h3>
+<p>Click any column header to sort. Available sort options: Updated (desc/asc), Created (desc/asc), Completed (desc).</p>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 6                                                     -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="s6"><span class="sn">6</span> Ticket Detail &amp; Conversation</h2>
+
+<p>Click any ticket to open its detail page. The page has three tabs and a properties sidebar.</p>
+
+<h3>6.1 &mdash; Conversation Tab</h3>
+<p>The default tab showing all messages in chronological order.</p>
+<ul>
+  <li><strong>Public messages</strong> &mdash; Visible to everyone including the requester. Used for replies to the user.</li>
+  <li><strong>Internal notes</strong> &mdash; Visible only to agents, leads, and admins. Use the toggle to switch between Public and Internal. <span class="role role-agent">AGENT+</span></li>
+  <li><strong>Rich text editor</strong> &mdash; Format messages with bold, italic, lists, links, and code blocks.</li>
+  <li><strong>@Mentions</strong> &mdash; Type <code>@</code> followed by a name to mention and notify a team member.</li>
+  <li><strong>Canned Responses</strong> &mdash; Click the canned response icon to insert pre-written replies. <span class="role role-agent">AGENT+</span></li>
+  <li><strong>Typing indicators</strong> &mdash; See when other agents are typing in real-time.</li>
+</ul>
+
+<h3>6.2 &mdash; Properties Sidebar</h3>
+<p>The right sidebar displays and allows editing of ticket properties:</p>
+<table>
+<tr><th>Property</th><th>Editable By</th><th>Description</th></tr>
+<tr><td>Status</td><td>Employee (own), Agent+</td><td>Dropdown showing valid transitions from current status</td></tr>
+<tr><td>Priority</td><td>Agent+</td><td>P1 (Critical) through P4 (Low)</td></tr>
+<tr><td>Category</td><td>Agent+</td><td>Ticket classification</td></tr>
+<tr><td>Team</td><td>Agent+ (transfer)</td><td>Assigned department/team</td></tr>
+<tr><td>Assigned To</td><td>Agent+</td><td>Individual agent. Includes "Assign to Me" shortcut</td></tr>
+<tr><td>Requester</td><td>Read-only</td><td>Person who created the ticket</td></tr>
+<tr><td>Created / Updated</td><td>Read-only</td><td>Timestamps</td></tr>
+<tr><td>SLA Status</td><td>Read-only</td><td>First Response and Resolution timers with countdown</td></tr>
+<tr><td>Custom Fields</td><td>Agent+</td><td>Dynamic fields configured per team/category</td></tr>
+<tr><td>Followers</td><td>All (own tickets)</td><td>Users receiving notifications for this ticket</td></tr>
+</table>
+
+<h3>6.3 &mdash; Timeline Tab</h3>
+<p>A complete audit trail of every action taken on the ticket:</p>
+<ul>
+  <li>Ticket created</li>
+  <li>Status changes (with old &rarr; new values)</li>
+  <li>Assignment changes</li>
+  <li>Team transfers</li>
+  <li>Priority changes</li>
+  <li>Messages added</li>
+  <li>SLA events (at risk, breached, paused)</li>
+  <li>Automation rule executions</li>
+</ul>
+
+<h3>6.4 &mdash; Attachments</h3>
+<ul>
+  <li><strong>Upload:</strong> Drag and drop files or use the file picker. Maximum file size is configurable (default 10 MB).</li>
+  <li><strong>Download:</strong> Click any attachment to download it.</li>
+  <li><strong>Malware Scanning:</strong> Uploaded files are automatically scanned. Status shows as Pending, Clean, or Infected.</li>
+</ul>
+
+<h3>6.5 &mdash; Custom Fields</h3>
+<p>Custom fields appear in the properties sidebar based on the ticket's team and category. Field types include:</p>
+<table>
+<tr><th>Field Type</th><th>Description</th></tr>
+<tr><td>Text</td><td>Single-line text input</td></tr>
+<tr><td>Long Text (Textarea)</td><td>Multi-line text input</td></tr>
+<tr><td>Number</td><td>Numeric input</td></tr>
+<tr><td>Dropdown</td><td>Single selection from predefined options</td></tr>
+<tr><td>Multi-Select</td><td>Multiple selections from predefined options</td></tr>
+<tr><td>Date</td><td>Date picker</td></tr>
+<tr><td>Checkbox</td><td>True/false toggle</td></tr>
+<tr><td>User</td><td>Select a user from the system</td></tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 7                                                     -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2 id="s7"><span class="sn">7</span> Ticket Workflow &amp; Status Transitions</h2>
+
+<p>Tickets follow a defined workflow. Not all status changes are possible &mdash; only valid transitions are shown in the dropdown.</p>
+
+<h4>Status Definitions</h4>
+<table>
+<tr><th>Status</th><th>Meaning</th></tr>
+<tr><td style="color:#3b82f6; font-weight:600;">NEW</td><td>Just created, not yet reviewed by support team</td></tr>
+<tr><td style="color:#8b5cf6; font-weight:600;">TRIAGED</td><td>Reviewed and categorized, awaiting assignment</td></tr>
+<tr><td style="color:#06b6d4; font-weight:600;">ASSIGNED</td><td>Assigned to a specific agent</td></tr>
+<tr><td style="color:#f59e0b; font-weight:600;">IN_PROGRESS</td><td>Agent is actively working on the issue</td></tr>
+<tr><td style="color:#64748b; font-weight:600;">WAITING_ON_REQUESTER</td><td>Waiting for the requester to provide information</td></tr>
+<tr><td style="color:#64748b; font-weight:600;">WAITING_ON_VENDOR</td><td>Waiting for an external vendor/third party</td></tr>
+<tr><td style="color:#10b981; font-weight:600;">RESOLVED</td><td>Issue has been fixed/addressed</td></tr>
+<tr><td style="color:#6b7280; font-weight:600;">CLOSED</td><td>Ticket is finalized (no further action)</td></tr>
+<tr><td style="color:#ef4444; font-weight:600;">REOPENED</td><td>Previously resolved ticket has been reopened</td></tr>
+</table>
+
+<h4>Typical Workflow</h4>
+<p style="font-family: monospace; font-size: 9.5pt; background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0; line-height: 2;">
+  <span style="color:#3b82f6;">NEW</span> &rarr; <span style="color:#8b5cf6;">TRIAGED</span> &rarr; <span style="color:#06b6d4;">ASSIGNED</span> &rarr; <span style="color:#f59e0b;">IN_PROGRESS</span> &rarr; <span style="color:#10b981;">RESOLVED</span> &rarr; <span style="color:#6b7280;">CLOSED</span><br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&darr;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&darr;<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#64748b;">WAITING_ON_REQUESTER</span>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#ef4444;">REOPENED</span> &rarr; (back to IN_PROGRESS)<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#64748b;">WAITING_ON_VENDOR</span>
+</p>
+
+<h4>Automatic Status Changes</h4>
+<ul>
+  <li>When a ticket is <strong>assigned</strong> and its status is NEW, TRIAGED, or REOPENED, it automatically changes to <strong>ASSIGNED</strong>.</li>
+  <li>When a ticket is <strong>transferred</strong> to a new team without an assignee, ASSIGNED/IN_PROGRESS status reverts to the appropriate earlier state.</li>
+  <li>SLA timers <strong>pause</strong> during WAITING_ON_REQUESTER and WAITING_ON_VENDOR statuses.</li>
+</ul>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 8                                                     -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="s8"><span class="sn">8</span> Assignment, Transfer &amp; Bulk Operations</h2>
+
+<h3>8.1 &mdash; Assigning Tickets</h3>
+<div class="roles-row"><span class="role role-agent">AGENT</span> <span class="role role-lead">LEAD</span> <span class="role role-admin">TEAM ADMIN</span> <span class="role role-owner">OWNER</span></div>
+<ol class="steps">
+  <li>Open the ticket detail page.</li>
+  <li>In the properties sidebar, click the <strong>"Assigned To"</strong> dropdown.</li>
+  <li>Select an agent from the team member list.</li>
+  <li>Or click <strong>"Assign to Me"</strong> to self-assign.</li>
+</ol>
+
+<div class="callout callout-warning">
+  <strong>Agent Restrictions</strong>
+  Agents can only assign tickets that are currently <strong>unassigned</strong> or <strong>assigned to themselves</strong>. They cannot reassign another agent's ticket. Leads and above have no such restriction.
+</div>
+
+<h3>8.2 &mdash; Transferring Tickets</h3>
+<div class="roles-row"><span class="role role-agent">AGENT</span> <span class="role role-lead">LEAD</span> <span class="role role-admin">TEAM ADMIN</span> <span class="role role-owner">OWNER</span></div>
+<ol class="steps">
+  <li>Open the ticket detail page.</li>
+  <li>Click the <strong>"Transfer"</strong> button or change the <strong>Team</strong> in the sidebar.</li>
+  <li>Select the destination team.</li>
+  <li>Optionally select a specific agent in the new team.</li>
+  <li>Confirm the transfer.</li>
+</ol>
+<p>The current assignee is cleared on transfer (unless you pick a new one). Followers and access grants are preserved.</p>
+
+<h3>8.3 &mdash; Bulk Operations</h3>
+<div class="roles-row"><span class="role role-agent">AGENT</span> <span class="role role-lead">LEAD</span> <span class="role role-admin">TEAM ADMIN</span> <span class="role role-owner">OWNER</span></div>
+<p>Select multiple tickets using the checkboxes in the ticket list. A bulk action toolbar appears at the top:</p>
+<table>
+<tr><th>Bulk Action</th><th>Description</th></tr>
+<tr><td>Bulk Assign</td><td>Assign all selected tickets to a team member (or unassign)</td></tr>
+<tr><td>Bulk Transfer</td><td>Move all selected tickets to a different team</td></tr>
+<tr><td>Bulk Status</td><td>Change status of all selected tickets</td></tr>
+<tr><td>Bulk Priority</td><td>Change priority of all selected tickets</td></tr>
+</table>
+
+<h4>Right-Click Context Menu</h4>
+<p>Right-click any ticket row for quick actions: Assign to Me, Change Status, Change Priority, Copy Ticket ID.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 9                                                     -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="s9"><span class="sn">9</span> SLA (Service Level Agreements)</h2>
+
+<h3>9.1 &mdash; Understanding SLA</h3>
+<p>SLAs define response and resolution time targets for tickets based on priority:</p>
+
+<table>
+<tr><th>SLA Metric</th><th>What It Measures</th></tr>
+<tr><td>First Response Time</td><td>Time from ticket creation until the first agent response</td></tr>
+<tr><td>Resolution Time</td><td>Time from ticket creation until the ticket is resolved</td></tr>
+</table>
+
+<h4>SLA Visual Indicators</h4>
+<table>
+<tr><th>Color</th><th>Status</th><th>Meaning</th></tr>
+<tr><td style="color:#10b981; font-weight:700;">Green</td><td>On Track</td><td>More than 50% of allotted time remaining</td></tr>
+<tr><td style="color:#f59e0b; font-weight:700;">Amber</td><td>Caution</td><td>25-50% of time remaining</td></tr>
+<tr><td style="color:#ea580c; font-weight:700;">Orange</td><td>At Risk</td><td>Less than 25% of time remaining</td></tr>
+<tr><td style="color:#dc2626; font-weight:700;">Red</td><td>Breached</td><td>Time has expired &mdash; SLA violated</td></tr>
+<tr><td style="color:#9ca3af; font-weight:700;">Gray</td><td>Paused</td><td>SLA timer is paused (waiting on requester/vendor)</td></tr>
+</table>
+
+<h3>9.2 &mdash; SLA Configuration</h3>
+<div class="roles-row"><span class="role role-admin">TEAM ADMIN</span> <span class="role role-owner">OWNER</span></div>
+<p>Navigate to <strong>Admin &rarr; SLA Policies</strong> to configure:</p>
+<ul>
+  <li><strong>Per-priority targets</strong> &mdash; Set different first response and resolution hours for P1, P2, P3, P4.</li>
+  <li><strong>Business hours</strong> &mdash; Configure working days, start/end times, and timezone. SLA timers only count business hours.</li>
+  <li><strong>Holidays</strong> &mdash; Add holidays when SLA timers should pause.</li>
+  <li><strong>Team assignment</strong> &mdash; Assign policies to specific teams.</li>
+  <li><strong>Escalation</strong> &mdash; Enable automatic notifications when SLA is at risk (configurable threshold, default 80%).</li>
+  <li><strong>Breach notification roles</strong> &mdash; Choose who gets notified on breach (Agent, Lead, Manager, Owner).</li>
+</ul>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 10                                                    -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="s10"><span class="sn">10</span> Triage Board (Kanban)</h2>
+<div class="roles-row"><span class="role role-lead">LEAD</span> <span class="role role-admin">TEAM ADMIN</span> <span class="role role-owner">OWNER</span></div>
+
+<p>The Triage Board provides a <strong>Kanban-style view</strong> of active tickets organized by status columns:</p>
+
+<h4>Columns</h4>
+<p>NEW | TRIAGED | ASSIGNED | IN_PROGRESS | WAITING_ON_REQUESTER | WAITING_ON_VENDOR | REOPENED</p>
+
+<h4>How to Use</h4>
+<ul>
+  <li><strong>Drag &amp; Drop:</strong> Move ticket cards between columns to change status.</li>
+  <li><strong>Card Actions:</strong> Right-click a card for quick actions (assign, change priority, transfer).</li>
+  <li><strong>Filters:</strong> Filter by team, search by text, and filter by priority.</li>
+  <li><strong>Bulk Select:</strong> Select multiple cards and apply bulk actions.</li>
+</ul>
+
+<div class="callout callout-tip">
+  <strong>Best for Triage Workflows</strong>
+  Leads use the triage board during daily standup to quickly categorize NEW tickets, assign them to agents, and monitor work in progress.
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 11                                                    -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="s11"><span class="sn">11</span> Notifications</h2>
+<div class="roles-row"><span class="role role-employee">ALL ROLES</span></div>
+
+<p>Click the <strong>bell icon</strong> in the top bar to open the notification center.</p>
+
+<h4>Notification Types</h4>
+<table>
+<tr><th>Type</th><th>When Triggered</th><th>Icon Color</th></tr>
+<tr><td>Ticket Assigned</td><td>A ticket is assigned to you</td><td style="color:#3b82f6;">Blue</td></tr>
+<tr><td>New Message</td><td>A new message is posted on a ticket you follow</td><td style="color:#ec4899;">Pink</td></tr>
+<tr><td>Ticket Mentioned</td><td>Someone @mentions you in a message</td><td style="color:#3b82f6;">Blue</td></tr>
+<tr><td>SLA At Risk</td><td>An SLA target is approaching its deadline</td><td style="color:#f59e0b;">Amber</td></tr>
+<tr><td>SLA Breached</td><td>An SLA target has been missed</td><td style="color:#ef4444;">Red</td></tr>
+<tr><td>Ticket Resolved</td><td>A ticket you follow has been resolved</td><td style="color:#10b981;">Green</td></tr>
+<tr><td>Ticket Transferred</td><td>A ticket has been transferred to/from your team</td><td style="color:#8b5cf6;">Violet</td></tr>
+</table>
+
+<h4>Actions</h4>
+<ul>
+  <li>Click a notification to navigate directly to the ticket.</li>
+  <li>Click <strong>"Mark all as read"</strong> to clear all unread notifications.</li>
+  <li>The <strong>unread count badge</strong> on the bell icon shows how many unread notifications you have.</li>
+  <li>Notifications arrive in <strong>real-time</strong> via WebSocket (with a polling fallback every 30 seconds).</li>
+</ul>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 12                                                    -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2 id="s12"><span class="sn">12</span> Reports &amp; Analytics</h2>
+<div class="roles-row"><span class="role role-lead">LEAD</span> <span class="role role-admin">TEAM ADMIN</span> <span class="role role-owner">OWNER</span></div>
+
+<p>Navigate to <strong>Reports</strong> in the sidebar. Reports are organized into tabs:</p>
+
+<h4>Report Tabs</h4>
+<table>
+<tr><th>Tab</th><th>Key Metrics</th></tr>
+<tr><td><strong>Overview</strong></td><td>Total tickets, avg response time, open rate, status distribution, priority distribution</td></tr>
+<tr><td><strong>SLA</strong></td><td>SLA compliance %, breaches list, compliance by priority, first response vs resolution</td></tr>
+<tr><td><strong>Volume</strong></td><td>Creation trends, resolution trends, backlog trends, channel breakdown</td></tr>
+<tr><td><strong>Agents</strong></td><td>Agent scorecard (workload, resolved, response time, resolution time), sortable metrics</td></tr>
+<tr><td><strong>CSAT</strong></td><td>Customer satisfaction trends, CSAT drivers, low-CSAT causes</td></tr>
+<tr><td><strong>Backlog</strong></td><td>Tickets by age, aging distribution, reopen rates</td></tr>
+</table>
+
+<h4>Report Filters</h4>
+<ul>
+  <li><strong>Date Range:</strong> Last 7/14/30 days or custom range</li>
+  <li><strong>Team:</strong> Filter to a specific team (Owner sees all; others see their team)</li>
+  <li><strong>Priority:</strong> Filter by P1, P2, P3, P4, or All</li>
+  <li><strong>Channel:</strong> Filter by ticket channel (Portal, Email)</li>
+  <li><strong>Assignee:</strong> Filter to a specific agent</li>
+  <li><strong>Compare:</strong> Toggle to compare with the previous period</li>
+</ul>
+
+<h4>Data Scoping by Role</h4>
+<ul>
+  <li><span class="role role-owner">OWNER</span> &mdash; Sees organization-wide data across all teams</li>
+  <li><span class="role role-admin">TEAM ADMIN</span> &mdash; Sees data scoped to their primary team only</li>
+  <li><span class="role role-lead">LEAD</span> &mdash; Sees data scoped to their team only</li>
+</ul>
+
+<h4>Export</h4>
+<p>Reports can be exported as CSV for external analysis. Use the <strong>Export</strong> tab or button on individual report views.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 13                                                    -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="s13"><span class="sn">13</span> Team Management</h2>
+<div class="roles-row"><span class="role role-lead">LEAD</span> <span class="role role-admin">TEAM ADMIN</span> <span class="role role-owner">OWNER</span></div>
+
+<p>Navigate to <strong>Team</strong> in the sidebar to manage your team.</p>
+
+<h4>Viewing Team Members</h4>
+<p>The team page shows all members with their name, email, team role, and system role.</p>
+
+<h4>Adding Members</h4>
+<div class="roles-row"><span class="role role-admin">TEAM ADMIN</span> <span class="role role-owner">OWNER</span></div>
+<ol class="steps">
+  <li>Click <strong>"Add Member"</strong>.</li>
+  <li>Search for the user by name or email.</li>
+  <li>Select a team role: <strong>Agent</strong>, <strong>Lead</strong>, or <strong>Admin</strong>.</li>
+  <li>Click <strong>"Add"</strong>.</li>
+</ol>
+
+<h4>Changing Member Roles</h4>
+<div class="roles-row"><span class="role role-admin">TEAM ADMIN</span> <span class="role role-owner">OWNER</span></div>
+<p>Click the role dropdown next to any member to change their team role.</p>
+
+<h4>Removing Members</h4>
+<div class="roles-row"><span class="role role-admin">TEAM ADMIN</span> <span class="role role-owner">OWNER</span></div>
+<p>Click the remove button next to a member. A confirmation dialog will appear.</p>
+
+<h4>Creating Teams</h4>
+<div class="roles-row"><span class="role role-owner">OWNER</span></div>
+<p>Only Owners can create new teams. Provide a name, optional description, and select the assignment strategy:</p>
+<ul>
+  <li><strong>Queue Only</strong> &mdash; Tickets go to the team queue; agents pick them up manually.</li>
+  <li><strong>Round Robin</strong> &mdash; Tickets are automatically assigned to team members in rotation.</li>
+</ul>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 14                                                    -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="s14"><span class="sn">14</span> Admin: Routing Rules</h2>
+<div class="roles-row"><span class="role role-admin">TEAM ADMIN</span> <span class="role role-owner">OWNER</span></div>
+
+<p>Routing rules automatically assign incoming tickets to the right team based on keywords. Navigate to <strong>Admin &rarr; Routing Rules</strong>.</p>
+
+<h4>How Routing Works</h4>
+<ol class="steps">
+  <li>When a ticket is created, the system scans the <strong>subject</strong> and <strong>description</strong> for keyword matches.</li>
+  <li>Rules are evaluated in <strong>priority order</strong> (lower number = higher priority).</li>
+  <li>The <strong>first matching rule</strong> wins and routes the ticket to its configured team.</li>
+  <li>If a specific assignee is set on the rule, the ticket is also assigned to that person.</li>
+  <li>If no rule matches, the ticket goes to whatever team was selected by the requester.</li>
+</ol>
+
+<h4>Creating a Routing Rule</h4>
+<ol class="steps">
+  <li>Click <strong>"Create Rule"</strong>.</li>
+  <li>Enter a <strong>Name</strong> (e.g., "Password Reset Requests").</li>
+  <li>Add <strong>Keywords</strong> (e.g., "password", "reset", "locked out"). These are matched case-insensitively.</li>
+  <li>Select the <strong>Target Team</strong> to route matching tickets to.</li>
+  <li>Optionally select a specific <strong>Assignee</strong> in the team.</li>
+  <li>Set the <strong>Priority</strong> (execution order, lower = first).</li>
+  <li>Toggle <strong>Active/Inactive</strong>.</li>
+  <li>Click <strong>"Save"</strong>.</li>
+</ol>
+
+<div class="callout callout-info">
+  <strong>Team Admin Scope</strong>
+  Team Admins can only create and manage routing rules for their own primary team. Owners can manage rules for any team.
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 15                                                    -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="s15"><span class="sn">15</span> Admin: Automation Rules</h2>
+<div class="roles-row"><span class="role role-admin">TEAM ADMIN</span> <span class="role role-owner">OWNER</span></div>
+
+<p>Automation rules execute actions automatically when certain conditions are met. Navigate to <strong>Admin &rarr; Automation Rules</strong>.</p>
+
+<h4>Available Triggers</h4>
+<table>
+<tr><th>Trigger</th><th>Fires When</th></tr>
+<tr><td><code>TICKET_CREATED</code></td><td>A new ticket is created</td></tr>
+<tr><td><code>STATUS_CHANGED</code></td><td>A ticket's status changes</td></tr>
+<tr><td><code>SLA_APPROACHING</code></td><td>An SLA deadline is approaching (at risk)</td></tr>
+<tr><td><code>SLA_BREACHED</code></td><td>An SLA deadline has been missed</td></tr>
+</table>
+
+<h4>Conditions</h4>
+<p>Optionally define conditions to narrow when the rule fires:</p>
+<ul>
+  <li>Field (Status, Priority, Team, Category, etc.)</li>
+  <li>Operator (equals, contains, in, not equals, etc.)</li>
+  <li>Value</li>
+  <li>Support for AND/OR logic (nested condition groups)</li>
+</ul>
+
+<h4>Available Actions</h4>
+<table>
+<tr><th>Action</th><th>Description</th></tr>
+<tr><td>Set Status</td><td>Automatically change the ticket status</td></tr>
+<tr><td>Assign to Team</td><td>Route the ticket to a different team</td></tr>
+<tr><td>Assign to User</td><td>Assign the ticket to a specific agent</td></tr>
+<tr><td>Notify Team Lead</td><td>Send a notification to the team lead</td></tr>
+<tr><td>Add Internal Note</td><td>Automatically post an internal note on the ticket</td></tr>
+</table>
+
+<h4>Creating an Automation Rule</h4>
+<ol class="steps">
+  <li>Click <strong>"Create Rule"</strong>.</li>
+  <li>Enter a <strong>Name</strong> and optional <strong>Description</strong>.</li>
+  <li>Select the <strong>Trigger</strong>.</li>
+  <li>Add <strong>Conditions</strong> (optional) to filter when the rule should fire.</li>
+  <li>Define one or more <strong>Actions</strong> to execute.</li>
+  <li>Set <strong>Priority</strong> (execution order, lower = first).</li>
+  <li>Optionally scope to a <strong>Team</strong>.</li>
+  <li>Click <strong>"Save"</strong>.</li>
+</ol>
+
+<h4>Testing Rules</h4>
+<p>Use the <strong>"Test Rule"</strong> button to dry-run a rule against an existing ticket. The system will show which conditions matched and what actions would execute, without actually applying them.</p>
+
+<h4>Execution History</h4>
+<p>View the execution history for any rule to see when it fired, which tickets it affected, and whether it succeeded or failed.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 16                                                    -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="s16"><span class="sn">16</span> Admin: Custom Fields</h2>
+<div class="roles-row"><span class="role role-admin">TEAM ADMIN</span> <span class="role role-owner">OWNER</span></div>
+
+<p>Custom fields add extra data capture to tickets. Navigate to <strong>Admin &rarr; Custom Fields</strong>.</p>
+
+<h4>Creating a Custom Field</h4>
+<ol class="steps">
+  <li>Click <strong>"Create Field"</strong>.</li>
+  <li>Enter the <strong>Label</strong> (display name).</li>
+  <li>Select the <strong>Type</strong>: Text, Long Text, Number, Dropdown, Multi-Select, Date, Checkbox, or User.</li>
+  <li>For Dropdown/Multi-Select, add the <strong>Options</strong> list.</li>
+  <li>Toggle <strong>Required</strong> if this field must be filled.</li>
+  <li>Select the <strong>Team</strong> this field belongs to.</li>
+  <li>Optionally select a <strong>Category</strong> to further scope when it appears.</li>
+  <li>Set <strong>Sort Order</strong> to control display position.</li>
+  <li>Click <strong>"Save"</strong>.</li>
+</ol>
+
+<p>Custom fields appear automatically in the ticket creation form and ticket detail sidebar when the team/category matches.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 17                                                    -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="s17"><span class="sn">17</span> Admin: Categories</h2>
+<div class="roles-row"><span class="role role-owner">OWNER</span></div>
+
+<p>Categories organize tickets into a hierarchical classification system. Navigate to <strong>Admin &rarr; Categories</strong>.</p>
+
+<h4>Features</h4>
+<ul>
+  <li><strong>Hierarchical:</strong> Categories can have parent categories, creating a tree structure.</li>
+  <li><strong>Active/Inactive:</strong> Deactivate categories without deleting them (inactive categories stop appearing in dropdowns).</li>
+  <li><strong>Auto-generated slug:</strong> A URL-friendly slug is created from the name.</li>
+  <li><strong>Deletion rules:</strong> Categories with child categories cannot be deleted &mdash; remove children first.</li>
+</ul>
+
+<h4>Creating a Category</h4>
+<ol class="steps">
+  <li>Click <strong>"Create Category"</strong>.</li>
+  <li>Enter the <strong>Name</strong> (e.g., "Hardware", "Software", "Network").</li>
+  <li>Optionally add a <strong>Description</strong>.</li>
+  <li>Optionally select a <strong>Parent Category</strong> to create a subcategory.</li>
+  <li>Click <strong>"Save"</strong>.</li>
+</ol>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 18                                                    -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="s18"><span class="sn">18</span> Admin: Audit Log</h2>
+<div class="roles-row"><span class="role role-admin">TEAM ADMIN</span> <span class="role role-owner">OWNER</span></div>
+
+<p>The audit log provides a compliance trail of all administrative changes. Navigate to <strong>Admin &rarr; Audit Log</strong>.</p>
+
+<h4>What's Logged</h4>
+<table>
+<tr><th>Category</th><th>Events Tracked</th></tr>
+<tr><td>Custom Fields</td><td>Created, Updated, Deleted</td></tr>
+<tr><td>SLA Policies</td><td>Created, Updated, Deleted</td></tr>
+<tr><td>Routing Rules</td><td>Created, Updated, Deleted</td></tr>
+<tr><td>Automation Rules</td><td>Created, Updated, Deleted, Executed, Execution Failed</td></tr>
+<tr><td>Teams</td><td>Created, Updated</td></tr>
+</table>
+
+<h4>Each Entry Shows</h4>
+<ul>
+  <li><strong>Type:</strong> What kind of change (create, update, delete)</li>
+  <li><strong>Entity:</strong> What was changed</li>
+  <li><strong>Actor:</strong> Who made the change (name and email preserved even if user is later deleted)</li>
+  <li><strong>Team:</strong> Which team the change relates to</li>
+  <li><strong>Timestamp:</strong> When the change was made</li>
+  <li><strong>Payload:</strong> Detailed before/after data</li>
+</ul>
+
+<h4>Filters</h4>
+<ul>
+  <li>Date range (from/to)</li>
+  <li>Event type</li>
+  <li>User (who made the change)</li>
+  <li>Text search</li>
+</ul>
+
+<h4>Export</h4>
+<p>Click <strong>"Export CSV"</strong> to download the filtered audit log as a CSV file for compliance reporting.</p>
+
+<div class="callout callout-info">
+  <strong>Scope Restriction</strong>
+  Team Admins only see audit events related to their primary team. Owners see all events across the platform.
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 19                                                    -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="s19"><span class="sn">19</span> Canned Responses</h2>
+<div class="roles-row"><span class="role role-agent">AGENT</span> <span class="role role-lead">LEAD</span> <span class="role role-admin">TEAM ADMIN</span> <span class="role role-owner">OWNER</span></div>
+
+<p>Canned responses are pre-written reply templates that speed up agent replies.</p>
+
+<h4>Types</h4>
+<ul>
+  <li><strong>Personal:</strong> Created by you, visible only to you.</li>
+  <li><strong>Team:</strong> Shared across the team. Created by assigning a team when saving.</li>
+</ul>
+
+<h4>Using Canned Responses</h4>
+<ol class="steps">
+  <li>Open a ticket and go to the message editor.</li>
+  <li>Click the <strong>canned response icon</strong> (lightning bolt or template icon).</li>
+  <li>Browse or search your personal and team canned responses.</li>
+  <li>Click a response to insert it into the editor.</li>
+  <li>Edit the inserted text as needed before sending.</li>
+</ol>
+
+<h4>Managing Canned Responses</h4>
+<p>Navigate to <strong>Canned Responses</strong> settings to create, edit, or delete your responses. You can only edit and delete responses that you created.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 20                                                    -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="s20"><span class="sn">20</span> Keyboard Shortcuts &amp; Command Palette</h2>
+
+<h4>Command Palette</h4>
+<p>The command palette is a quick-access search tool. Press <kbd>Ctrl</kbd>+<kbd>K</kbd> (or <kbd>Cmd</kbd>+<kbd>K</kbd> on Mac) to open it.</p>
+<ul>
+  <li><strong>Search tickets</strong> by ID, subject, or keywords</li>
+  <li><strong>Navigate</strong> to any page (filtered by your role)</li>
+  <li><strong>Create ticket</strong> quickly</li>
+  <li><strong>Recent searches</strong> and <strong>recent entities</strong> are remembered</li>
+</ul>
+
+<h4>Keyboard Shortcuts</h4>
+<table>
+<tr><th>Shortcut</th><th>Action</th></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>K</kbd> / <kbd>Cmd</kbd>+<kbd>K</kbd></td><td>Open Command Palette</td></tr>
+<tr><td><kbd>?</kbd></td><td>Open Keyboard Shortcuts Help</td></tr>
+<tr><td><kbd>Esc</kbd></td><td>Close current modal or dialog</td></tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 21                                                    -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="s21"><span class="sn">21</span> Email Integration</h2>
+
+<p>The system supports ticket creation and updates via email.</p>
+
+<h4>Creating Tickets via Email</h4>
+<ul>
+  <li>Send an email to the configured support address.</li>
+  <li>The <strong>subject</strong> becomes the ticket subject.</li>
+  <li>The <strong>body</strong> becomes the ticket description.</li>
+  <li>The sender's email is matched to an existing user (or a profile is created).</li>
+</ul>
+
+<h4>Email Threading</h4>
+<ul>
+  <li>Replies to ticket notification emails are automatically threaded as <strong>new messages</strong> on the original ticket.</li>
+  <li>Each ticket has a unique <strong>reply token</strong> embedded in notification emails.</li>
+  <li>The system matches inbound emails by message ID headers and reply tokens.</li>
+</ul>
+
+<h4>Email Channel</h4>
+<p>Tickets created via email are marked with the <code>EMAIL</code> channel. Tickets created through the web portal are marked <code>PORTAL</code>.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 22                                                    -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2 id="s22"><span class="sn">22</span> Frequently Asked Questions</h2>
+
+<h4>Q: I can't see any tickets. What's wrong?</h4>
+<p><strong>A:</strong> As an Employee, you only see tickets you created. If you're an Agent and see no tickets, your team may not have any assigned tickets. Contact your team lead to verify your team membership.</p>
+
+<h4>Q: How do I change my role?</h4>
+<p><strong>A:</strong> Only Owners can change user roles. Contact your platform administrator.</p>
+
+<h4>Q: Can I be a member of multiple teams?</h4>
+<p><strong>A:</strong> Yes. You can be added as a member (Agent, Lead, or Admin) to multiple teams. Your ticket visibility includes tickets from all your teams.</p>
+
+<h4>Q: What happens to my tickets if I'm removed from a team?</h4>
+<p><strong>A:</strong> Tickets assigned to you remain assigned. Your team lead or admin should reassign them. You will lose visibility to team tickets you didn't create or aren't assigned to.</p>
+
+<h4>Q: How does Round Robin assignment work?</h4>
+<p><strong>A:</strong> When a ticket arrives in a team with Round Robin enabled, the system assigns it to the next team member in rotation. The system tracks who was last assigned and moves to the next person. If the assignee is unavailable, it moves to the next member.</p>
+
+<h4>Q: Can I reopen a closed ticket?</h4>
+<p><strong>A:</strong> Yes, resolved tickets can be reopened (status changes to REOPENED). Check the status dropdown for available transitions from the current status.</p>
+
+<h4>Q: Does the SLA timer run during weekends?</h4>
+<p><strong>A:</strong> If the SLA policy has "Business Hours Only" enabled (which is the default), the timer only counts business hours as configured. Weekends and holidays are excluded.</p>
+
+<h4>Q: How do I get notified about SLA breaches?</h4>
+<p><strong>A:</strong> You'll receive in-app notifications. If you're a follower of the ticket, you'll also receive email notifications. SLA escalation notifications are sent to the roles configured in the SLA policy (default: Agent and Lead).</p>
+
+<h4>Q: What's the difference between "Transfer" and "Assign"?</h4>
+<p><strong>A:</strong> <strong>Assign</strong> changes which agent within the same team handles the ticket. <strong>Transfer</strong> moves the ticket to a completely different team (and optionally assigns to someone in that new team).</p>
+
+<h4>Q: Can I undo a status change or assignment?</h4>
+<p><strong>A:</strong> There is no "undo" button, but you can change the status again or reassign to the previous person. All changes are logged in the ticket timeline for audit purposes.</p>
+
+<h4>Q: How do internal notes differ from public messages?</h4>
+<p><strong>A:</strong> <strong>Public messages</strong> are visible to everyone, including the Employee/requester. <strong>Internal notes</strong> are visible only to Agents, Leads, Admins, and Owners. Use internal notes for team discussions about the ticket that the requester shouldn't see.</p>
+
+<h4>Q: What file types and sizes can I upload?</h4>
+<p><strong>A:</strong> Most common file types are supported. The maximum file size is configured by your administrator (default: 10 MB per file). Uploaded files are automatically scanned for malware.</p>
+
+<h4>Q: I'm a Team Admin but I can't see other teams' data. Is this correct?</h4>
+<p><strong>A:</strong> Yes. Team Admins are scoped to their <strong>primary team</strong> only. This is by design for organizational security. Only the Owner role has cross-team visibility. Contact your Owner if you need broader access.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- FOOTER                                                        -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div style="text-align:center; margin-top:40px; padding:20px; border-top:2px solid #0f766e; color:#64748b; font-size:9pt;">
+  <strong>End of User Manual</strong><br>
+  CSNHC Ticketing System &mdash; Complete User Manual v1.0<br>
+  Creative Solutions in Healthcare &mdash; March 24, 2026<br>
+  For technical support, contact your system administrator.
+</div>
+
+</body>
+</html>
