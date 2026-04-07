@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Send, Loader2 } from "lucide-react";
+import { Send, Loader2, Lock } from "lucide-react";
 
 interface MessageComposerProps {
   ticketId: string;
@@ -37,44 +35,58 @@ export function MessageComposer({ ticketId, authorId, onMessageSent }: MessageCo
     }
   }
 
+  const isInternal = type === "INTERNAL";
+
   return (
-    <div className="space-y-2 border rounded-lg p-3">
-      <Tabs value={type} onValueChange={(v) => setType(v as "PUBLIC" | "INTERNAL")}>
-        <TabsList className="h-8">
-          <TabsTrigger value="PUBLIC" className="text-xs">Reply</TabsTrigger>
-          <TabsTrigger value="INTERNAL" className="text-xs">Internal Note</TabsTrigger>
-        </TabsList>
-      </Tabs>
+    <div className={`rounded-xl border p-2 ${isInternal ? "border-yellow-300 bg-yellow-50/50" : "border-border bg-card"}`}>
+      {/* Type toggle */}
+      <div className="flex items-center gap-1 px-1 pb-2">
+        <button
+          onClick={() => setType("PUBLIC")}
+          className={`text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
+            !isInternal ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+          }`}
+        >
+          Reply
+        </button>
+        <button
+          onClick={() => setType("INTERNAL")}
+          className={`text-xs px-2.5 py-1 rounded-full font-medium transition-colors flex items-center gap-1 ${
+            isInternal ? "bg-yellow-500 text-white" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+          }`}
+        >
+          <Lock className="h-3 w-3" />
+          Internal Note
+        </button>
+      </div>
 
-      <Textarea
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
-        placeholder={type === "PUBLIC" ? "Type a reply..." : "Add an internal note..."}
-        rows={3}
-        className="resize-none"
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-            e.preventDefault();
-            handleSend();
-          }
-        }}
-      />
-
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">
-          Ctrl+Enter to send
-        </span>
+      {/* Input + Send */}
+      <div className="flex items-end gap-2">
+        <textarea
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          placeholder={isInternal ? "Write an internal note..." : "Type a message..."}
+          rows={1}
+          className="flex-1 resize-none bg-transparent text-sm outline-none px-2 py-1.5 max-h-32 min-h-[36px]"
+          style={{ fieldSizing: "content" } as React.CSSProperties}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              handleSend();
+            }
+          }}
+        />
         <Button
-          size="sm"
+          size="icon"
+          className={`h-9 w-9 shrink-0 rounded-full ${isInternal ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
           onClick={handleSend}
           disabled={!body.trim() || isSending}
         >
           {isSending ? (
-            <Loader2 className="h-4 w-4 animate-spin mr-1" />
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <Send className="h-4 w-4 mr-1" />
+            <Send className="h-4 w-4" />
           )}
-          {type === "PUBLIC" ? "Send Reply" : "Add Note"}
         </Button>
       </div>
     </div>

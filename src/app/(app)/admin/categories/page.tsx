@@ -61,36 +61,35 @@ export default function CategoriesPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">{categories.length} categor{categories.length !== 1 ? "ies" : "y"}</p>
+        <Button size="sm" onClick={() => setDialogOpen(true)}><Plus className="h-4 w-4 mr-1" /> Add Category</Button>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger>
-            <Button size="sm"><Plus className="h-4 w-4 mr-1" /> Add Category</Button>
-          </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>New Category</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div>
+            <form onSubmit={handleCreate} className="space-y-5 pt-2">
+              <div className="space-y-2">
                 <Label htmlFor="name">Category Name</Label>
                 <Input id="name" name="name" required placeholder="e.g. Network Issues" />
               </div>
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="description">Description (optional)</Label>
                 <Input id="description" name="description" placeholder="Brief description" />
               </div>
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="parentId">Parent Category</Label>
-                <Select name="parentId" defaultValue="none">
-                  <SelectTrigger><SelectValue placeholder="None (root category)" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None (root category)</SelectItem>
-                    {roots.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <select
+                  name="parentId"
+                  defaultValue="none"
+                  className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="none">None (root category)</option>
+                  {roots.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
               </div>
-              <Button type="submit" className="w-full">Create Category</Button>
+              <Button type="submit" className="w-full mt-2">Create Category</Button>
             </form>
           </DialogContent>
         </Dialog>

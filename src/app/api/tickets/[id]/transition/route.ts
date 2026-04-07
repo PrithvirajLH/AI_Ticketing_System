@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { getSupabase } from "@/lib/db/supabase";
+import { notify } from "@/lib/notifications/service";
+import { evaluateRules } from "@/lib/automation/engine";
 
 const STATUS_TRANSITIONS: Record<string, string[]> = {
   NEW: ["TRIAGED", "ASSIGNED"],
@@ -95,6 +97,26 @@ export async function POST(
       payload: { from: ticket.status, to: newStatus },
       createdById: userId,
     });
+
+    // Notify + trigger automation (fire-and-forget)
+    const notifType = newStatus === "RESOLVED" ? "TICKET_RESOLVED" : "TICKET_UPDATED";
+    notify({
+      type: notifType,
+      ticketId: id,
+      actorId: userId,
+      title: `Ticket status changed to ${newStatus}`,
+    }).catch(() => {});
+
+    // Get full ticket for automation
+    const { data: fullTicket } = await supabase
+      .from("Ticket")
+      .select("id, subject, description, status, priority, assignedTeamId, assigneeId, categoryId, requesterId")
+      .eq("id", id)
+      .single();
+
+    if (fullTicket) {
+      evaluateRules("STATUS_CHANGED", fullTicket, userId).catch(() => {});
+    }
 
     return NextResponse.json({ status: newStatus });
   } catch (error) {

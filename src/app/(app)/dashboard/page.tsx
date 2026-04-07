@@ -69,11 +69,16 @@ export default function DashboardPage() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="py-6 px-6 space-y-6">
-        <div>
-          <h1>Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            Overview of your service desk
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1>Dashboard</h1>
+            <p className="text-muted-foreground mt-1">
+              Overview of your service desk
+            </p>
+          </div>
+          <div className="text-right text-sm text-muted-foreground">
+            {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+          </div>
         </div>
 
         {/* KPI Cards */}

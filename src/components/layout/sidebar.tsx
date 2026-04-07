@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import {
   MessageSquarePlus,
@@ -12,67 +12,58 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
+  UserX,
+  UserCheck,
+  Bell,
+  BarChart3,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
-interface NavItem {
-  href: string;
-  label: string;
-  icon: React.ReactNode;
-  section?: string;
-}
-
-const NAV_ITEMS: NavItem[] = [
-  {
-    href: "/submit",
-    label: "New Request",
-    icon: <MessageSquarePlus className="h-5 w-5" />,
-    section: "main",
-  },
-  {
-    href: "/tickets",
-    label: "Tickets",
-    icon: <Inbox className="h-5 w-5" />,
-    section: "main",
-  },
-  {
-    href: "/dashboard",
-    label: "Dashboard",
-    icon: <LayoutDashboard className="h-5 w-5" />,
-    section: "main",
-  },
-  {
-    href: "/admin/teams",
-    label: "Admin",
-    icon: <Settings className="h-5 w-5" />,
-    section: "main",
-  },
-  {
-    href: "/debug",
-    label: "Pipeline Debug",
-    icon: <Bug className="h-5 w-5" />,
-    section: "dev",
-  },
-];
+const CURRENT_USER_ID = "a89f9497-b330-47ad-9136-65a5e4e5abd8";
 
 function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+  return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
 }
 
 export function Sidebar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { data: session } = useSession();
   const [collapsed, setCollapsed] = useState(false);
+  const [unassignedCount, setUnassignedCount] = useState<number | null>(null);
+  const [assignedCount, setAssignedCount] = useState<number | null>(null);
+  const [notifCount, setNotifCount] = useState(0);
 
-  const mainItems = NAV_ITEMS.filter((i) => i.section === "main");
-  const devItems = NAV_ITEMS.filter((i) => i.section === "dev");
+  // Fetch counts
+  useEffect(() => {
+    async function loadCounts() {
+      try {
+        const res = await fetch(`/api/tickets/counts?userId=${CURRENT_USER_ID}`);
+        const data = await res.json();
+        setUnassignedCount(data.unassigned ?? 0);
+        setAssignedCount(data.assigned ?? 0);
+      } catch { /* ignore */ }
+
+      try {
+        const res = await fetch(`/api/notifications?userId=${CURRENT_USER_ID}`);
+        const data = await res.json();
+        setNotifCount(data.unreadCount ?? 0);
+      } catch { /* ignore */ }
+    }
+    loadCounts();
+    const interval = setInterval(loadCounts, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const currentScope = pathname === "/tickets" ? (searchParams.get("scope") ?? "all") : null;
+
+  const isTicketsActive = pathname === "/tickets" || pathname.startsWith("/tickets/");
+  const isUnassignedActive = pathname === "/tickets" && currentScope === "unassigned";
+  const isAssignedActive = pathname === "/tickets" && currentScope === "assigned";
+  const isTicketsMainActive = isTicketsActive && !isUnassignedActive && !isAssignedActive;
+  const isAdminActive = pathname.startsWith("/admin");
 
   return (
     <aside
@@ -87,67 +78,144 @@ export function Sidebar() {
           AI
         </div>
         {!collapsed ? (
-          <span className="font-semibold text-sm truncate">Ticket Master</span>
+          <>
+            <span className="font-semibold text-sm truncate flex-1">Ticket Master</span>
+            <button className="relative text-muted-foreground hover:text-foreground transition-colors" title="Notifications">
+              <Bell className="h-4.5 w-4.5" />
+              {notifCount > 0 ? (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold min-w-[14px] h-[14px] flex items-center justify-center rounded-full px-0.5">
+                  {notifCount > 99 ? "99+" : notifCount}
+                </span>
+              ) : null}
+            </button>
+          </>
         ) : null}
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 py-3 space-y-1 px-2">
-        {mainItems.map((item) => {
-          const isAdmin = item.href.startsWith("/admin");
-          const active = isAdmin
-            ? pathname.startsWith("/admin")
-            : pathname === item.href || pathname.startsWith(item.href + "/");
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
-                active
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-              )}
-              title={collapsed ? item.label : undefined}
-            >
-              {item.icon}
-              {!collapsed ? <span>{item.label}</span> : null}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 py-3 space-y-0.5 px-2">
+        {/* New Request */}
+        <NavLink href="/submit" icon={<MessageSquarePlus className="h-5 w-5" />} label="New Request" active={pathname === "/submit"} collapsed={collapsed} />
 
-        {devItems.length > 0 ? (
-          <>
-            <div className="pt-4 pb-1 px-3">
-              {!collapsed ? (
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Developer
-                </span>
-              ) : (
-                <div className="border-t" />
-              )}
+        {/* Tickets */}
+        <NavLink href="/tickets" icon={<Inbox className="h-5 w-5" />} label="Tickets" active={isTicketsMainActive} collapsed={collapsed} />
+
+        {/* Unassigned — sub-item under Tickets */}
+        {!collapsed ? (
+          <Link
+            href="/tickets?scope=unassigned"
+            className={cn(
+              "flex items-center justify-between rounded-md pl-11 pr-3 py-2 text-sm font-medium transition-colors",
+              isUnassignedActive
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <UserX className="h-4 w-4" />
+              <span>Unassigned</span>
             </div>
-            {devItems.map((item) => {
-              const active = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
-                    active
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                  title={collapsed ? item.label : undefined}
-                >
-                  {item.icon}
-                  {!collapsed ? <span>{item.label}</span> : null}
-                </Link>
-              );
-            })}
-          </>
-        ) : null}
+            {unassignedCount !== null && unassignedCount > 0 ? (
+              <span className={cn(
+                "text-xs font-semibold min-w-[20px] h-5 flex items-center justify-center rounded-full px-1.5",
+                isUnassignedActive
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-orange-500/10 text-orange-600"
+              )}>
+                {unassignedCount}
+              </span>
+            ) : null}
+          </Link>
+        ) : (
+          <Link
+            href="/tickets?scope=unassigned"
+            className={cn(
+              "flex items-center justify-center rounded-md py-2 transition-colors",
+              isUnassignedActive
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            )}
+            title="Unassigned"
+          >
+            <div className="relative">
+              <UserX className="h-5 w-5" />
+              {unassignedCount !== null && unassignedCount > 0 ? (
+                <span className="absolute -top-1.5 -right-1.5 bg-orange-500 text-white text-[9px] font-bold min-w-[14px] h-[14px] flex items-center justify-center rounded-full px-0.5">
+                  {unassignedCount}
+                </span>
+              ) : null}
+            </div>
+          </Link>
+        )}
+
+        {/* Assigned to Me — sub-item under Tickets */}
+        {!collapsed ? (
+          <Link
+            href="/tickets?scope=assigned"
+            className={cn(
+              "flex items-center justify-between rounded-md pl-11 pr-3 py-2 text-sm font-medium transition-colors",
+              isAssignedActive
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <UserCheck className="h-4 w-4" />
+              <span>Assigned to Me</span>
+            </div>
+            {assignedCount !== null && assignedCount > 0 ? (
+              <span className={cn(
+                "text-xs font-semibold min-w-[20px] h-5 flex items-center justify-center rounded-full px-1.5",
+                isAssignedActive
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-blue-500/10 text-blue-600"
+              )}>
+                {assignedCount}
+              </span>
+            ) : null}
+          </Link>
+        ) : (
+          <Link
+            href="/tickets?scope=assigned"
+            className={cn(
+              "flex items-center justify-center rounded-md py-2 transition-colors",
+              isAssignedActive
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            )}
+            title="Assigned to Me"
+          >
+            <div className="relative">
+              <UserCheck className="h-5 w-5" />
+              {assignedCount !== null && assignedCount > 0 ? (
+                <span className="absolute -top-1.5 -right-1.5 bg-blue-500 text-white text-[9px] font-bold min-w-[14px] h-[14px] flex items-center justify-center rounded-full px-0.5">
+                  {assignedCount}
+                </span>
+              ) : null}
+            </div>
+          </Link>
+        )}
+
+        {/* Dashboard */}
+        <NavLink href="/dashboard" icon={<LayoutDashboard className="h-5 w-5" />} label="Dashboard" active={pathname === "/dashboard"} collapsed={collapsed} />
+
+        {/* Reports */}
+        <NavLink href="/reports" icon={<BarChart3 className="h-5 w-5" />} label="Reports" active={pathname === "/reports"} collapsed={collapsed} />
+
+        {/* Admin */}
+        <NavLink href="/admin/teams" icon={<Settings className="h-5 w-5" />} label="Admin" active={isAdminActive} collapsed={collapsed} />
+
+        {/* Dev section */}
+        <div className="pt-4 pb-1 px-3">
+          {!collapsed ? (
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Developer
+            </span>
+          ) : (
+            <div className="border-t" />
+          )}
+        </div>
+        <NavLink href="/debug" icon={<Bug className="h-5 w-5" />} label="Pipeline Debug" active={pathname === "/debug"} collapsed={collapsed} />
       </nav>
 
       {/* User + Collapse */}
@@ -187,13 +255,33 @@ export function Sidebar() {
           onClick={() => setCollapsed(!collapsed)}
           className="flex items-center justify-center w-full rounded-md py-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
         >
-          {collapsed ? (
-            <ChevronRight className="h-4 w-4" />
-          ) : (
-            <ChevronLeft className="h-4 w-4" />
-          )}
+          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </button>
       </div>
     </aside>
+  );
+}
+
+function NavLink({ href, icon, label, active, collapsed }: {
+  href: string;
+  icon: React.ReactNode;
+  label: string;
+  active: boolean;
+  collapsed: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+        active
+          ? "bg-primary/10 text-primary"
+          : "text-muted-foreground hover:text-foreground hover:bg-muted"
+      )}
+      title={collapsed ? label : undefined}
+    >
+      {icon}
+      {!collapsed ? <span>{label}</span> : null}
+    </Link>
   );
 }

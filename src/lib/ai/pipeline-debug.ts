@@ -273,10 +273,18 @@ IMPORTANT: Return ONLY the JSON object, nothing else. Format:
 
   const step6Start = Date.now();
 
+  // Resolve requester name
+  const { getSupabase: getSb } = await import("@/lib/db/supabase");
+  const { data: requesterUser } = await getSb()
+    .from("User")
+    .select("displayName")
+    .eq("id", requesterId)
+    .single();
+
   // Build AI analysis from pipeline data
   const aiAnalysis = {
     what: intent.intent,
-    who: `Requester ID: ${requesterId}`,
+    who: requesterUser?.displayName ?? "Unknown requester",
     context: finalClassification.reasoning,
     urgency: intent.urgencySignals.length > 0 ? intent.urgencySignals.join(", ") : "None indicated",
     intent: intent.intent,

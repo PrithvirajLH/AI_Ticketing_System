@@ -62,9 +62,10 @@ function timeAgo(dateStr: string): string {
 export function ActivityTimeline({ events }: ActivityTimelineProps) {
   if (events.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground text-center py-4">
-        No activity yet
-      </p>
+      <div className="text-center py-6 space-y-1">
+        <p className="text-sm text-muted-foreground">No activity yet</p>
+        <p className="text-xs text-muted-foreground/60">Events will appear here as the ticket progresses</p>
+      </div>
     );
   }
 

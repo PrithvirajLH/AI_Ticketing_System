@@ -72,39 +72,39 @@ export default function RoutingPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">{rules.length} routing rule{rules.length !== 1 ? "s" : ""}</p>
+        <Button size="sm" onClick={() => setDialogOpen(true)}><Plus className="h-4 w-4 mr-1" /> Add Rule</Button>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger>
-            <Button size="sm"><Plus className="h-4 w-4 mr-1" /> Add Rule</Button>
-          </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>New Routing Rule</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div>
+            <form onSubmit={handleCreate} className="space-y-5 pt-2">
+              <div className="space-y-2">
                 <Label htmlFor="name">Rule Name</Label>
                 <Input id="name" name="name" required placeholder="e.g. IT access and devices" />
               </div>
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="keywords">Keywords (comma-separated)</Label>
                 <Input id="keywords" name="keywords" required placeholder="vpn, laptop, device, it" />
               </div>
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="teamId">Route to Team</Label>
-                <Select name="teamId" required>
-                  <SelectTrigger><SelectValue placeholder="Select team" /></SelectTrigger>
-                  <SelectContent>
-                    {teams.map((t) => (
-                      <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <select
+                  name="teamId"
+                  required
+                  className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="">Select team</option>
+                  {teams.map((t) => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
               </div>
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="priority">Priority (lower = higher priority)</Label>
                 <Input id="priority" name="priority" type="number" defaultValue="100" />
               </div>
-              <Button type="submit" className="w-full">Create Rule</Button>
+              <Button type="submit" className="w-full mt-2">Create Rule</Button>
             </form>
           </DialogContent>
         </Dialog>

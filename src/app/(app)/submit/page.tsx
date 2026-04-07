@@ -4,40 +4,44 @@ import { useState, useCallback } from "react";
 import { Sparkles } from "lucide-react";
 import { ChatInput } from "@/components/chat/chat-input";
 import { ExamplePrompts } from "@/components/chat/example-prompts";
-import { ProcessingSteps, type PipelineStep } from "@/components/chat/processing-steps";
-import { TicketPreview } from "@/components/chat/ticket-preview";
+import { MultiStepLoader } from "@/components/ui/multi-step-loader";
 import { TicketCreated } from "@/components/chat/ticket-created";
+
+const LOADING_STATES = [
+  { text: "Understanding your request..." },
+  { text: "Finding the right department..." },
+  { text: "Checking classification confidence..." },
+  { text: "Generating ticket draft..." },
+  { text: "Routing to the right team..." },
+  { text: "Almost there..." },
+];
 
 type ViewState =
   | { phase: "input" }
-  | { phase: "processing"; steps: PipelineStep[] }
-  | { phase: "preview"; ticket: TicketData; confidence: number; teamName: string; categoryName: string; aiAnalysis: Record<string, unknown>; steps: StepData[] }
-  | { phase: "created"; ticket: CreatedTicket }
+  | { phase: "processing" }
+  | { phase: "created"; ticket: CreatedTicket; classification: ClassificationInfo }
   | { phase: "error"; message: string }
   | { phase: "clarification"; question: string; originalText: string };
-
-interface TicketData {
-  subject: string;
-  description: string;
-  priority: string;
-  channel: string;
-  assignedTeamId: string;
-  categoryId: string | null;
-  displayId: string;
-  tags: string[];
-}
 
 interface CreatedTicket {
   id: string;
   number: number;
   displayId: string | null;
   subject: string;
+  description: string;
   priority: string;
+  tags: string[];
 }
 
-interface StepData {
-  parsed: unknown;
-  [key: string]: unknown;
+interface ClassificationInfo {
+  department: string;
+  departmentConfidence: number;
+  category: string | null;
+  intent: string;
+  requestType: string;
+  reasoning: string;
+  urgency: string;
+  routingMethod: string;
 }
 
 // Hardcoded for now — replace with auth later
@@ -50,14 +54,7 @@ export default function SubmitPage() {
   const classify = useCallback(async (text: string) => {
     setLastText(text);
 
-    const steps: PipelineStep[] = [
-      { name: "Understanding your request", status: "running" },
-      { name: "Finding the right department", status: "pending" },
-      { name: "Checking confidence", status: "pending" },
-      { name: "Generating ticket draft", status: "pending" },
-    ];
-
-    setView({ phase: "processing", steps: [...steps] });
+    setView({ phase: "processing" });
 
     try {
       const res = await fetch("/api/ai/debug", {
@@ -77,24 +74,7 @@ export default function SubmitPage() {
         return;
       }
 
-      // Update steps based on response
       const completedSteps = data.steps ?? [];
-      for (let i = 0; i < steps.length; i++) {
-        const completed = completedSteps[i];
-        if (completed) {
-          steps[i] = {
-            name: steps[i].name,
-            status: completed.status === "success" ? "done" : "error",
-            detail:
-              i === 0 && completed.parsed
-                ? (completed.parsed as { intent?: string })?.intent
-                : i === 1 && completed.parsed
-                  ? `${(completed.parsed as { department?: { name?: string } })?.department?.name} (${((completed.parsed as { department?: { confidence?: number } })?.department?.confidence ?? 0) * 100}%)`
-                  : undefined,
-          };
-        }
-        setView({ phase: "processing", steps: [...steps] });
-      }
 
       if (data.finalStatus === "needs_clarification") {
         setView({
@@ -110,63 +90,46 @@ export default function SubmitPage() {
         return;
       }
 
-      // Find ticket draft from step 4 and classification from step 2
-      const step4 = completedSteps.find(
-        (s: { step: number }) => s.step === 4
-      );
-      if (step4?.parsed) {
-        const ticket = step4.parsed as TicketData;
-        const step3 = completedSteps.find(
-          (s: { step: number }) => s.step === 3
-        );
-        const step2 = completedSteps.find(
-          (s: { step: number }) => s.step === 2
-        );
-        const confidence =
-          (step3?.parsed as { overallConfidence?: number })
-            ?.overallConfidence ?? 0.8;
-
-        // Extract team and category names from classification
+      // Pipeline already created the ticket at Step 6
+      if (data.finalStatus === "created" && data.ticket) {
+        // Extract classification from pipeline steps
+        const completedSteps = data.steps ?? [];
         const step1 = completedSteps.find((s: { step: number }) => s.step === 1);
-        const classification = step2?.parsed as {
-          department?: { name?: string; confidence?: number };
-          category?: { name?: string };
-          reasoning?: string;
-        } | undefined;
-        const intent = step1?.parsed as {
-          intent?: string;
-          requestType?: string;
-          urgencySignals?: string[];
-        } | undefined;
+        const step2 = completedSteps.find((s: { step: number }) => s.step === 2);
+        const step3 = completedSteps.find((s: { step: number }) => s.step === 3);
+        const step4 = completedSteps.find((s: { step: number }) => s.step === 4);
+        const step5 = completedSteps.find((s: { step: number }) => s.step === 5);
 
-        const teamName = classification?.department?.name ?? ticket.assignedTeamId;
-        const categoryName = classification?.category?.name ?? ticket.categoryId ?? "—";
-
-        // Build AI analysis for storage
-        const aiAnalysis = {
-          what: intent?.intent ?? ticket.subject,
-          who: `Requester ID: ${CURRENT_USER_ID}`,
-          context: classification?.reasoning ?? "",
-          urgency: intent?.urgencySignals?.length ? intent.urgencySignals.join(", ") : "None indicated",
-          intent: intent?.intent ?? "",
-          requestType: intent?.requestType ?? "QUESTION",
-          department: teamName,
-          departmentConfidence: classification?.department?.confidence ?? 0,
-          category: classification?.category?.name ?? null,
-          reasoning: classification?.reasoning ?? "",
-        };
+        const intent = step1?.parsed as { intent?: string; requestType?: string; urgencySignals?: string[] } | undefined;
+        const classification = step2?.parsed as { department?: { name?: string; confidence?: number }; category?: { name?: string }; reasoning?: string } | undefined;
+        const confidence = step3?.parsed as { overallConfidence?: number } | undefined;
+        const draft = step4?.parsed as { tags?: string[]; description?: string } | undefined;
+        const routing = step5?.parsed as { team?: string; method?: string } | undefined;
 
         setView({
-          phase: "preview",
-          ticket,
-          confidence,
-          teamName,
-          categoryName,
-          aiAnalysis,
-          steps: completedSteps,
+          phase: "created",
+          ticket: {
+            id: data.ticket.id ?? "",
+            number: data.ticket.number ?? 0,
+            displayId: data.ticket.displayId ?? null,
+            subject: data.ticket.subject ?? "",
+            description: draft?.description ?? data.ticket.description ?? "",
+            priority: data.ticket.priority ?? "P3",
+            tags: draft?.tags ?? [],
+          },
+          classification: {
+            department: routing?.team ?? classification?.department?.name ?? "Unknown",
+            departmentConfidence: classification?.department?.confidence ?? confidence?.overallConfidence ?? 0,
+            category: classification?.category?.name ?? null,
+            intent: intent?.intent ?? "",
+            requestType: intent?.requestType ?? "QUESTION",
+            reasoning: classification?.reasoning ?? "",
+            urgency: intent?.urgencySignals?.length ? intent.urgencySignals.join(", ") : "None",
+            routingMethod: routing?.method ?? "ai_classification",
+          },
         });
       } else {
-        setView({ phase: "error", message: "No ticket draft generated" });
+        setView({ phase: "error", message: "No ticket created" });
       }
     } catch (err) {
       setView({
@@ -175,42 +138,6 @@ export default function SubmitPage() {
       });
     }
   }, []);
-
-  const submitTicket = useCallback(async () => {
-    if (view.phase !== "preview") return;
-
-    const { ticket } = view;
-
-    setView((prev) =>
-      prev.phase === "preview" ? { ...prev, phase: "preview" } : prev
-    );
-
-    try {
-      const res = await fetch("/api/ai/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...ticket,
-          requesterId: CURRENT_USER_ID,
-          rawText: lastText,
-          aiAnalysis: view.aiAnalysis,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (data.status === "created") {
-        setView({ phase: "created", ticket: data.ticket });
-      } else {
-        setView({ phase: "error", message: data.error ?? "Failed to create ticket" });
-      }
-    } catch (err) {
-      setView({
-        phase: "error",
-        message: err instanceof Error ? err.message : "Submit failed",
-      });
-    }
-  }, [view]);
 
   const reset = useCallback(() => {
     setView({ phase: "input" });
@@ -242,15 +169,13 @@ export default function SubmitPage() {
           </div>
         ) : null}
 
-        {/* Processing */}
-        {view.phase === "processing" ? (
-          <div className="space-y-4">
-            <div className="bg-muted/50 rounded-lg p-3 text-sm">
-              {lastText}
-            </div>
-            <ProcessingSteps steps={view.steps} />
-          </div>
-        ) : null}
+        {/* Multi-step loader overlay */}
+        <MultiStepLoader
+          loadingStates={LOADING_STATES}
+          loading={view.phase === "processing"}
+          duration={2000}
+          loop={false}
+        />
 
         {/* Clarification */}
         {view.phase === "clarification" ? (
@@ -274,27 +199,9 @@ export default function SubmitPage() {
           </div>
         ) : null}
 
-        {/* Preview */}
-        {view.phase === "preview" ? (
-          <div className="space-y-4">
-            <div className="bg-muted/50 rounded-lg p-3 text-sm">
-              {lastText}
-            </div>
-            <TicketPreview
-              ticket={view.ticket}
-              teamName={view.teamName}
-              categoryName={view.categoryName}
-              confidence={view.confidence}
-              onConfirm={submitTicket}
-              onRetry={() => classify(lastText)}
-              isSubmitting={false}
-            />
-          </div>
-        ) : null}
-
         {/* Created */}
         {view.phase === "created" ? (
-          <TicketCreated ticket={view.ticket} onNewTicket={reset} />
+          <TicketCreated ticket={view.ticket} classification={view.classification} onNewTicket={reset} />
         ) : null}
 
         {/* Error */}

@@ -32,23 +32,41 @@ export async function createTicket(
     const now = new Date().toISOString();
     const ticketId = generateId();
 
-    // Generate proper displayId: get team slug and next ticket number
+    // Generate displayId: DEPT_YYYYMMDD_NNN
+    // e.g. AI_20260407_001, HR_20260407_002
     let displayId = input.draft.displayId;
     const { data: team } = await supabase
       .from("Team")
-      .select("slug")
+      .select("slug, name")
       .eq("id", input.draft.assignedTeamId)
       .single();
 
     if (team) {
+      // Build department prefix from slug
+      // ai → AI, hr → HR, it-service-desk → IT, hr-operations → HR-OPS, medicaid-pending → MP, white-gloves → WG
+      const SLUG_PREFIX: Record<string, string> = {
+        "ai": "AI",
+        "hr": "HR",
+        "it-service-desk": "IT",
+        "medicaid-pending": "MP",
+        "white-gloves": "WG",
+      };
+      const deptPrefix = SLUG_PREFIX[team.slug] ?? team.slug.toUpperCase();
+
+      // Today's date as YYYYMMDD
+      const today = new Date();
+      const dateStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
+
+      // Count tickets for this team created today
+      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
       const { count } = await supabase
         .from("Ticket")
         .select("id", { count: "exact", head: true })
-        .eq("assignedTeamId", input.draft.assignedTeamId);
+        .eq("assignedTeamId", input.draft.assignedTeamId)
+        .gte("createdAt", startOfDay);
 
-      const nextNum = (count ?? 0) + 1;
-      const slug = team.slug.toUpperCase().replace(/-/g, "-");
-      displayId = `${slug}-${String(nextNum).padStart(4, "0")}`;
+      const dailyNum = (count ?? 0) + 1;
+      displayId = `${deptPrefix}_${dateStr}_${String(dailyNum).padStart(3, "0")}`;
     }
 
     const { data: ticket, error } = await supabase
@@ -139,6 +157,18 @@ export async function createSlaInstance(
     const resolutionDueAt = target
       ? new Date(now.getTime() + target.resolutionHours * 60 * 60 * 1000).toISOString()
       : null;
+
+    // Also set due dates on the Ticket itself so they show in the queue
+    if (firstResponseDueAt || resolutionDueAt) {
+      await supabase
+        .from("Ticket")
+        .update({
+          firstResponseDueAt,
+          dueAt: resolutionDueAt,
+          updatedAt: now.toISOString(),
+        })
+        .eq("id", ticketId);
+    }
 
     const { data, error } = await supabase
       .from("SlaInstance")

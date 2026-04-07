@@ -7,8 +7,7 @@ export async function GET() {
 
     const { data, error } = await supabase
       .from("Team")
-      .select("id, name, slug")
-      .eq("isActive", true)
+      .select("id, name, slug, description, isActive, assignmentStrategy")
       .order("name");
 
     if (error) {

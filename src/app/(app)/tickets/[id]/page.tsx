@@ -9,8 +9,7 @@ import { TicketHeader } from "@/components/tickets/detail/ticket-header";
 import { MessageList } from "@/components/tickets/detail/message-list";
 import { MessageComposer } from "@/components/tickets/detail/message-composer";
 import { ActivityTimeline } from "@/components/tickets/detail/activity-timeline";
-import { StatusActions } from "@/components/tickets/detail/status-actions";
-import { AssignControl } from "@/components/tickets/detail/assign-control";
+import { TicketActions } from "@/components/tickets/detail/ticket-actions";
 import { AiSummary } from "@/components/tickets/detail/ai-summary";
 
 const CURRENT_USER_ID = "a89f9497-b330-47ad-9136-65a5e4e5abd8";
@@ -137,16 +136,20 @@ export default function TicketDetailPage() {
 
               <Separator />
 
-              <div className="space-y-4">
-                <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                  Conversation
-                </h2>
-                <MessageList messages={messages} />
-                <MessageComposer
-                  ticketId={ticketId}
-                  authorId={CURRENT_USER_ID}
-                  onMessageSent={refreshAll}
-                />
+              <div className="rounded-xl border bg-muted/20 overflow-hidden">
+                <div className="px-4 py-2.5 border-b bg-card">
+                  <h2 className="text-sm font-medium">Conversation</h2>
+                </div>
+                <div className="px-4 min-h-[200px]">
+                  <MessageList messages={messages} />
+                </div>
+                <div className="px-3 pb-3 pt-1">
+                  <MessageComposer
+                    ticketId={ticketId}
+                    authorId={CURRENT_USER_ID}
+                    onMessageSent={refreshAll}
+                  />
+                </div>
               </div>
             </div>
 
@@ -156,37 +159,15 @@ export default function TicketDetailPage() {
               <AiSummary analysis={aiAnalysis} tags={tags} />
 
               {/* Actions */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <h3 className="text-sm font-medium">Actions</h3>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-2">Status</p>
-                    <StatusActions
-                      ticketId={ticketId}
-                      currentStatus={ticket.status}
-                      hasAssignee={!!ticket.assigneeId}
-                      userId={CURRENT_USER_ID}
-                      onStatusChanged={refreshAll}
-                    />
-                  </div>
-
-                  <Separator />
-
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-2">Assignment</p>
-                    <AssignControl
-                      ticketId={ticketId}
-                      currentAssigneeId={ticket.assigneeId}
-                      currentAssigneeName={ticket.assignee?.displayName ?? null}
-                      teamId={ticket.assignedTeamId}
-                      userId={CURRENT_USER_ID}
-                      onAssigned={refreshAll}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+              <TicketActions
+                ticketId={ticketId}
+                currentStatus={ticket.status}
+                assigneeId={ticket.assigneeId}
+                assigneeName={ticket.assignee?.displayName ?? null}
+                teamId={ticket.assignedTeamId}
+                teamName={ticket.assignedTeam?.name ?? null}
+                onChanged={refreshAll}
+              />
 
               {/* Activity */}
               <Card>
