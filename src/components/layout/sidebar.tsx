@@ -8,6 +8,7 @@ import {
   Inbox,
   LayoutDashboard,
   Bug,
+  Settings,
   ChevronLeft,
   ChevronRight,
   LogOut,
@@ -40,6 +41,12 @@ const NAV_ITEMS: NavItem[] = [
     href: "/dashboard",
     label: "Dashboard",
     icon: <LayoutDashboard className="h-5 w-5" />,
+    section: "main",
+  },
+  {
+    href: "/admin/teams",
+    label: "Admin",
+    icon: <Settings className="h-5 w-5" />,
     section: "main",
   },
   {
@@ -87,7 +94,10 @@ export function Sidebar() {
       {/* Nav */}
       <nav className="flex-1 py-3 space-y-1 px-2">
         {mainItems.map((item) => {
-          const active = pathname === item.href || pathname.startsWith(item.href + "/");
+          const isAdmin = item.href.startsWith("/admin");
+          const active = isAdmin
+            ? pathname.startsWith("/admin")
+            : pathname === item.href || pathname.startsWith(item.href + "/");
           return (
             <Link
               key={item.href}

@@ -14,7 +14,7 @@ const SubmitSchema = z.object({
   tags: z.array(z.string()),
   requesterId: z.string(),
   rawText: z.string().optional(),
-  aiAnalysis: z.record(z.unknown()).optional(),
+  aiAnalysis: z.record(z.string(), z.unknown()).optional(),
 });
 
 export async function POST(request: Request) {
