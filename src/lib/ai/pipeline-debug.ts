@@ -221,7 +221,26 @@ IMPORTANT: Return ONLY the JSON object, nothing else. Format:
   const step5Start = Date.now();
   const requesterId = input.userId ?? "unknown";
 
-  const ticketResult = await createTicket({ draft: ticketDraft, requesterId });
+  // Build AI analysis from pipeline data
+  const aiAnalysis = {
+    what: intent.intent,
+    who: `Requester ID: ${requesterId}`,
+    context: finalClassification.reasoning,
+    urgency: intent.urgencySignals.length > 0 ? intent.urgencySignals.join(", ") : "None indicated",
+    intent: intent.intent,
+    requestType: intent.requestType,
+    department: finalClassification.department.name,
+    departmentConfidence: finalClassification.department.confidence,
+    category: finalClassification.category?.name ?? null,
+    reasoning: finalClassification.reasoning,
+  };
+
+  const ticketResult = await createTicket({
+    draft: ticketDraft,
+    requesterId,
+    rawText: input.text,
+    aiAnalysis,
+  });
 
   if (!ticketResult.success) {
     steps.push({

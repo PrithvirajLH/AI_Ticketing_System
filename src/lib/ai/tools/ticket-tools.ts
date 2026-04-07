@@ -5,6 +5,19 @@ import type { TicketDraft, ToolResult } from "../types";
 interface CreateTicketInput {
   draft: TicketDraft;
   requesterId: string;
+  rawText?: string;
+  aiAnalysis?: {
+    what: string;
+    who: string;
+    context: string;
+    urgency: string;
+    intent: string;
+    requestType: string;
+    department: string;
+    departmentConfidence: number;
+    category: string | null;
+    reasoning: string;
+  };
 }
 
 function generateId(): string {
@@ -60,7 +73,7 @@ export async function createTicket(
       return { success: false, error: `Failed to create ticket: ${error?.message ?? "No data returned"}` };
     }
 
-    // Log the creation event
+    // Log the creation event with AI analysis
     await supabase.from("TicketEvent").insert({
       id: generateId(),
       ticketId: ticket.id,
@@ -68,6 +81,8 @@ export async function createTicket(
       payload: {
         source: "ai_pipeline",
         tags: input.draft.tags,
+        rawText: input.rawText ?? null,
+        aiAnalysis: input.aiAnalysis ?? null,
       },
       createdById: input.requesterId,
     });

@@ -48,3 +48,8 @@ next-env.d.ts
 .claude/
 Plan Docs/
 docs/
+
+# playwright and screenshots
+.playwright-mcp/
+.playwright-cli/
+screenshots/

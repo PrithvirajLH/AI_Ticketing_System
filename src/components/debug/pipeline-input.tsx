@@ -1,5 +1,9 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+
 interface PipelineInputFormProps {
   onSubmit: (text: string, userId: string) => void;
   isLoading: boolean;
@@ -18,38 +22,32 @@ export function PipelineInputForm({ onSubmit, isLoading }: PipelineInputFormProp
       className="space-y-3"
     >
       <div>
-        <label htmlFor="text" className="block text-sm font-medium text-gray-300 mb-1">
+        <label htmlFor="text" className="block text-sm font-medium mb-1">
           Employee Request
         </label>
-        <textarea
+        <Textarea
           id="text"
           name="text"
           rows={3}
           required
           placeholder="e.g. I can't access SAP and I have a deadline tomorrow"
-          className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 text-sm"
           defaultValue="I can't access SAP and I have a deadline tomorrow for the quarterly report"
         />
       </div>
       <div>
-        <label htmlFor="userId" className="block text-sm font-medium text-gray-300 mb-1">
+        <label htmlFor="userId" className="block text-sm font-medium mb-1">
           User ID (optional)
         </label>
-        <input
+        <Input
           id="userId"
           name="userId"
           type="text"
           placeholder="e.g. a89f9497-b330-47ad-9136-65a5e4e5abd8"
-          className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 text-sm"
         />
       </div>
-      <button
-        type="submit"
-        disabled={isLoading}
-        className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:text-gray-500 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
-      >
+      <Button type="submit" disabled={isLoading}>
         {isLoading ? "Running Pipeline..." : "Run Pipeline"}
-      </button>
+      </Button>
     </form>
   );
 }

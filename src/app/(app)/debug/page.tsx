@@ -63,11 +63,11 @@ export default function DebugPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      <div className="max-w-3xl mx-auto py-8 px-4 space-y-6">
+    <div className="h-full overflow-y-auto">
+      <div className="max-w-3xl mx-auto py-8 px-6 space-y-6">
         <div>
-          <h1 className="text-xl font-semibold">AI Pipeline Debug</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1>AI Pipeline Debug</h1>
+          <p className="text-muted-foreground mt-1">
             Test the 4-agent classification pipeline. See input/output for each step.
           </p>
         </div>
@@ -75,14 +75,14 @@ export default function DebugPage() {
         <PipelineInputForm onSubmit={handleSubmit} isLoading={isLoading} />
 
         {isLoading ? (
-          <div className="text-center py-8 text-gray-400 text-sm">
+          <div className="text-center py-8 text-muted-foreground text-sm">
             <span className="inline-block animate-spin mr-2">&#9696;</span>
             Running pipeline — this takes ~10-15 seconds...
           </div>
         ) : null}
 
         {error ? (
-          <div className="bg-red-950 border border-red-700 rounded p-3 text-red-300 text-sm">
+          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-600 text-sm">
             {error}
           </div>
         ) : null}
