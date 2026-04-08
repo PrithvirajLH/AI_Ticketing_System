@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { getSupabase } from "@/lib/db/supabase";
+import { CreateRoutingRuleSchema, validateBody } from "@/lib/validation/schemas";
 
 export async function GET() {
   const supabase = getSupabase();
@@ -24,6 +25,11 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const body = await request.json();
+  const validation = validateBody(CreateRoutingRuleSchema, body);
+  if (!validation.success) {
+    return NextResponse.json({ error: validation.error }, { status: 400 });
+  }
+  const { name, keywords, teamId, priority, assigneeId } = validation.data;
   const supabase = getSupabase();
   const now = new Date().toISOString();
 
@@ -31,17 +37,21 @@ export async function POST(request: Request) {
     .from("RoutingRule")
     .insert({
       id: randomUUID(),
-      name: body.name,
-      keywords: body.keywords ?? [],
-      teamId: body.teamId,
-      priority: body.priority ?? 100,
+      name,
+      keywords,
+      teamId,
+      priority,
       isActive: true,
-      assigneeId: body.assigneeId ?? null,
+      assigneeId: assigneeId ?? null,
       updatedAt: now,
     })
     .select()
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  const { logAuditEvent } = await import("@/lib/audit");
+  await logAuditEvent({ type: "ROUTING_RULE_CREATED", payload: { name, keywords, teamId } }).catch(() => {});
+
   return NextResponse.json({ rule: data }, { status: 201 });
 }

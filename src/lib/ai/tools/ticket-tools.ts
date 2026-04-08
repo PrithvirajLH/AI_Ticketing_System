@@ -91,6 +91,13 @@ export async function createTicket(
       return { success: false, error: `Failed to create ticket: ${error?.message ?? "No data returned"}` };
     }
 
+    // Auto-follow: requester follows their own ticket
+    await supabase.from("TicketFollower").insert({
+      id: generateId(),
+      ticketId: ticket.id,
+      userId: input.requesterId,
+    });
+
     // Log the creation event with AI analysis
     await supabase.from("TicketEvent").insert({
       id: generateId(),
@@ -151,12 +158,28 @@ export async function createSlaInstance(
       .eq("priority", priority)
       .single();
 
-    const firstResponseDueAt = target
-      ? new Date(now.getTime() + target.firstResponseHours * 60 * 60 * 1000).toISOString()
-      : null;
-    const resolutionDueAt = target
-      ? new Date(now.getTime() + target.resolutionHours * 60 * 60 * 1000).toISOString()
-      : null;
+    // Check if policy uses business hours
+    const { data: policyConfig } = await supabase
+      .from("SlaPolicyConfig")
+      .select("businessHoursOnly")
+      .eq("id", policy.id)
+      .single();
+
+    let firstResponseDueAt: string | null = null;
+    let resolutionDueAt: string | null = null;
+
+    if (target) {
+      if (policyConfig?.businessHoursOnly) {
+        // Use business hours calculation
+        const { addBusinessHours } = await import("@/lib/sla/business-hours");
+        firstResponseDueAt = (await addBusinessHours(now, target.firstResponseHours)).toISOString();
+        resolutionDueAt = (await addBusinessHours(now, target.resolutionHours)).toISOString();
+      } else {
+        // Wall-clock hours
+        firstResponseDueAt = new Date(now.getTime() + target.firstResponseHours * 60 * 60 * 1000).toISOString();
+        resolutionDueAt = new Date(now.getTime() + target.resolutionHours * 60 * 60 * 1000).toISOString();
+      }
+    }
 
     // Also set due dates on the Ticket itself so they show in the queue
     if (firstResponseDueAt || resolutionDueAt) {

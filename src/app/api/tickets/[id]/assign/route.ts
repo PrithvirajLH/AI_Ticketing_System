@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { getSupabase } from "@/lib/db/supabase";
+import { AssignTicketSchema, validateBody } from "@/lib/validation/schemas";
 
 export async function POST(
   request: Request,
@@ -9,8 +10,11 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await request.json();
-    const assigneeId = body.assigneeId as string | null;
-    const userId = body.userId as string;
+    const validation = validateBody(AssignTicketSchema, body);
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+    const { assigneeId, userId } = validation.data;
     const supabase = getSupabase();
 
     const now = new Date().toISOString();

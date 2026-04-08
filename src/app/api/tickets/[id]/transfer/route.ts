@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { getSupabase } from "@/lib/db/supabase";
 import { notify } from "@/lib/notifications/service";
+import { TransferTicketSchema, validateBody } from "@/lib/validation/schemas";
 
 export async function POST(
   request: Request,
@@ -10,8 +11,11 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await request.json();
-    const newTeamId = body.teamId as string;
-    const userId = body.userId as string;
+    const validation = validateBody(TransferTicketSchema, body);
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+    const { teamId: newTeamId, userId } = validation.data;
     const supabase = getSupabase();
 
     // Get current ticket

@@ -98,6 +98,10 @@ export async function notify(input: NotifyInput): Promise<void> {
       .single();
 
     if (user?.email) {
+      // Build email threading headers
+      const messageId = `<${randomUUID()}@ticketmaster.local>`;
+      const threadRef = `<ticket-${input.ticketId}@ticketmaster.local>`;
+
       await supabase.from("NotificationOutbox").insert({
         id: randomUUID(),
         channel: "EMAIL",
@@ -108,6 +112,7 @@ export async function notify(input: NotifyInput): Promise<void> {
         ticketId: input.ticketId,
         subject: input.title,
         body: input.body ?? input.title,
+        payload: { messageId, inReplyTo: threadRef, references: threadRef },
         updatedAt: new Date().toISOString(),
       });
     }

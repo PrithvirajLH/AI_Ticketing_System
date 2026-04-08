@@ -36,7 +36,7 @@ interface TeamOption {
 }
 
 function TicketsContent() {
-  const { tabs, activeTabId, isQueueView, openTab } = useTicketTabs();
+  const { tabs, activeTabId, isQueueView, openTab, showQueue } = useTicketTabs();
   const searchParams = useSearchParams();
   const initialScope = searchParams.get("scope") ?? "all";
 
@@ -47,11 +47,12 @@ function TicketsContent() {
   const [teams, setTeams] = useState<TeamOption[]>([]);
   const [scope, setScope] = useState(initialScope);
 
-  // Sync scope when URL changes (e.g. clicking sidebar Unassigned link)
+  // Sync scope when URL changes AND switch to queue view
   useEffect(() => {
     const urlScope = searchParams.get("scope") ?? "all";
     setScope(urlScope);
-  }, [searchParams]);
+    showQueue();
+  }, [searchParams, showQueue]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isProcessing, setIsProcessing] = useState(false);
   const [filters, setFilters] = useState({
@@ -132,15 +133,37 @@ function TicketsContent() {
 
   async function handleBulkAssign() {
     setIsProcessing(true);
-    await Promise.all(
-      Array.from(selectedIds).map((id) =>
-        fetch(`/api/tickets/${id}/assign`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ assigneeId: CURRENT_USER_ID, userId: CURRENT_USER_ID }),
-        })
-      )
-    );
+    await fetch("/api/tickets/bulk", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "assign",
+        ticketIds: Array.from(selectedIds),
+        assigneeId: CURRENT_USER_ID,
+        userId: CURRENT_USER_ID,
+      }),
+    });
+    setSelectedIds(new Set());
+    setIsProcessing(false);
+    fetchTickets();
+  }
+
+  async function handleBulkAction(action: string, value: string) {
+    setIsProcessing(true);
+    const body: Record<string, unknown> = {
+      action,
+      ticketIds: Array.from(selectedIds),
+      userId: CURRENT_USER_ID,
+    };
+    if (action === "status") body.status = value;
+    if (action === "priority") body.priority = value;
+    if (action === "transfer") body.teamId = value;
+
+    await fetch("/api/tickets/bulk", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
     setSelectedIds(new Set());
     setIsProcessing(false);
     fetchTickets();
@@ -175,6 +198,7 @@ function TicketsContent() {
             <BulkActionsBar
               selectedCount={selectedIds.size}
               onAssignToMe={handleBulkAssign}
+              onBulkAction={handleBulkAction}
               onClear={() => setSelectedIds(new Set())}
               isProcessing={isProcessing}
             />

@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 import { getSupabase } from "@/lib/db/supabase";
 import { notify } from "@/lib/notifications/service";
 import { evaluateRules } from "@/lib/automation/engine";
+import { TransitionTicketSchema, validateBody } from "@/lib/validation/schemas";
 
 const STATUS_TRANSITIONS: Record<string, string[]> = {
   NEW: ["TRIAGED", "ASSIGNED"],
@@ -23,8 +24,14 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await request.json();
-    const newStatus = body.status as string;
-    const userId = body.userId as string;
+
+    const validation = validateBody(TransitionTicketSchema, body);
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+
+    const newStatus = validation.data.status;
+    const userId = validation.data.userId;
     const supabase = getSupabase();
 
     // Get current ticket
@@ -67,6 +74,7 @@ export async function POST(
       update.completedAt = now;
     } else if (newStatus === "CLOSED") {
       update.closedAt = now;
+      update.completedAt = now;
     } else if (newStatus === "REOPENED") {
       update.resolvedAt = null;
       update.completedAt = null;

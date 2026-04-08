@@ -11,6 +11,10 @@ import { MessageComposer } from "@/components/tickets/detail/message-composer";
 import { ActivityTimeline } from "@/components/tickets/detail/activity-timeline";
 import { TicketActions } from "@/components/tickets/detail/ticket-actions";
 import { AiSummary } from "@/components/tickets/detail/ai-summary";
+import { SlaCard } from "@/components/tickets/detail/sla-card";
+import { CsatWidget } from "@/components/tickets/detail/csat-widget";
+import { FollowersButton } from "@/components/tickets/detail/followers-button";
+import { AttachmentsCard } from "@/components/tickets/detail/attachments-card";
 
 const CURRENT_USER_ID = "a89f9497-b330-47ad-9136-65a5e4e5abd8";
 
@@ -24,6 +28,7 @@ interface TicketData {
   priority: string;
   channel: string;
   createdAt: string;
+  requesterId: string;
   assigneeId: string | null;
   assignedTeamId: string | null;
   requester: { displayName: string; email: string; department: string | null } | null;
@@ -132,7 +137,12 @@ export default function TicketDetailPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Main content — 2/3 */}
             <div className="lg:col-span-2 space-y-6">
-              <TicketHeader ticket={ticket} rawText={rawText} />
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <TicketHeader ticket={ticket} rawText={rawText} />
+                </div>
+                <FollowersButton ticketId={ticketId} />
+              </div>
 
               <Separator />
 
@@ -158,16 +168,26 @@ export default function TicketDetailPage() {
               {/* AI Summary */}
               <AiSummary analysis={aiAnalysis} tags={tags} />
 
+              {/* SLA */}
+              <SlaCard ticketId={ticketId} status={ticket.status} />
+
+              {/* Attachments */}
+              <AttachmentsCard ticketId={ticketId} />
+
               {/* Actions */}
               <TicketActions
                 ticketId={ticketId}
                 currentStatus={ticket.status}
+                currentPriority={ticket.priority}
                 assigneeId={ticket.assigneeId}
                 assigneeName={ticket.assignee?.displayName ?? null}
                 teamId={ticket.assignedTeamId}
                 teamName={ticket.assignedTeam?.name ?? null}
                 onChanged={refreshAll}
               />
+
+              {/* CSAT */}
+              <CsatWidget ticketId={ticketId} status={ticket.status} requesterId={ticket.requesterId ?? ""} />
 
               {/* Activity */}
               <Card>

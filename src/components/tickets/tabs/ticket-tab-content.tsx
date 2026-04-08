@@ -10,6 +10,10 @@ import { MessageComposer } from "@/components/tickets/detail/message-composer";
 import { ActivityTimeline } from "@/components/tickets/detail/activity-timeline";
 import { TicketActions } from "@/components/tickets/detail/ticket-actions";
 import { AiSummary } from "@/components/tickets/detail/ai-summary";
+import { SlaCard } from "@/components/tickets/detail/sla-card";
+import { CsatWidget } from "@/components/tickets/detail/csat-widget";
+import { FollowersButton } from "@/components/tickets/detail/followers-button";
+import { AttachmentsCard } from "@/components/tickets/detail/attachments-card";
 import { useMemo } from "react";
 
 const CURRENT_USER_ID = "a89f9497-b330-47ad-9136-65a5e4e5abd8";
@@ -83,6 +87,7 @@ export function TicketTabContent({ ticketId }: TicketTabContentProps) {
     priority: string;
     channel: string;
     createdAt: string;
+    requesterId: string;
     assigneeId: string | null;
     assignedTeamId: string | null;
     requester: { displayName: string; email: string; department: string | null } | null;
@@ -97,7 +102,12 @@ export function TicketTabContent({ ticketId }: TicketTabContentProps) {
         <div className="py-6 px-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-              <TicketHeader ticket={t} rawText={rawText} />
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <TicketHeader ticket={t} rawText={rawText} />
+                </div>
+                <FollowersButton ticketId={ticketId} />
+              </div>
               <Separator />
               <div className="rounded-xl border bg-muted/20 overflow-hidden">
                 <div className="px-4 py-2.5 border-b bg-card">
@@ -120,15 +130,19 @@ export function TicketTabContent({ ticketId }: TicketTabContentProps) {
                 analysis={aiAnalysis as never}
                 tags={tags}
               />
+              <SlaCard ticketId={ticketId} status={t.status} />
+              <AttachmentsCard ticketId={ticketId} />
               <TicketActions
                 ticketId={ticketId}
                 currentStatus={t.status}
+                currentPriority={t.priority}
                 assigneeId={t.assigneeId}
                 assigneeName={t.assignee?.displayName ?? null}
                 teamId={t.assignedTeamId}
                 teamName={t.assignedTeam?.name ?? null}
                 onChanged={refreshAll}
               />
+              <CsatWidget ticketId={ticketId} status={t.status} requesterId={t.requesterId ?? ""} />
               <Card>
                 <CardHeader className="pb-3">
                   <h3 className="text-sm font-medium">Activity</h3>

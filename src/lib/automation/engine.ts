@@ -14,11 +14,18 @@ interface AutomationRule {
   isActive: boolean;
 }
 
-interface Condition {
+interface SimpleCondition {
   field: string;
   operator: "equals" | "notEquals" | "contains" | "in" | "notIn";
   value: string | string[];
 }
+
+interface ConditionGroup {
+  logic: "AND" | "OR";
+  conditions: (SimpleCondition | ConditionGroup)[];
+}
+
+type Condition = SimpleCondition | ConditionGroup;
 
 interface Action {
   type: "assign_team" | "assign_user" | "set_priority" | "set_status" | "notify_team_lead" | "add_internal_note";
@@ -68,9 +75,9 @@ export async function evaluateRules(
     // Check team scope
     if (rule.teamId && rule.teamId !== ticket.assignedTeamId) continue;
 
-    // Evaluate conditions
+    // Evaluate conditions (supports AND/OR nesting)
     const conditions = (rule.conditions as Condition[]) ?? [];
-    const allMatch = conditions.every((c) => matchCondition(c, ticket));
+    const allMatch = evaluateConditions(conditions, ticket);
     if (!allMatch) continue;
 
     // Execute actions
@@ -101,20 +108,35 @@ export async function evaluateRules(
   return { executed: false, ruleName: null, actions: [] };
 }
 
-function matchCondition(condition: Condition, ticket: TicketContext): boolean {
-  const fieldValue = ticket[condition.field as keyof TicketContext] as string | null;
+function evaluateConditions(conditions: Condition[], ticket: TicketContext): boolean {
+  // Default: all conditions must match (AND)
+  return conditions.every((c) => matchCondition(c, ticket));
+}
 
-  switch (condition.operator) {
+function matchCondition(condition: Condition, ticket: TicketContext): boolean {
+  // Handle nested AND/OR groups
+  if ("logic" in condition && "conditions" in condition) {
+    const group = condition as ConditionGroup;
+    if (group.logic === "OR") {
+      return group.conditions.some((c) => matchCondition(c, ticket));
+    }
+    return group.conditions.every((c) => matchCondition(c, ticket));
+  }
+
+  const simple = condition as SimpleCondition;
+  const fieldValue = ticket[simple.field as keyof TicketContext] as string | null;
+
+  switch (simple.operator) {
     case "equals":
-      return fieldValue === condition.value;
+      return fieldValue === simple.value;
     case "notEquals":
-      return fieldValue !== condition.value;
+      return fieldValue !== simple.value;
     case "contains":
-      return fieldValue?.toLowerCase().includes((condition.value as string).toLowerCase()) ?? false;
+      return fieldValue?.toLowerCase().includes((simple.value as string).toLowerCase()) ?? false;
     case "in":
-      return Array.isArray(condition.value) && condition.value.includes(fieldValue ?? "");
+      return Array.isArray(simple.value) && simple.value.includes(fieldValue ?? "");
     case "notIn":
-      return Array.isArray(condition.value) && !condition.value.includes(fieldValue ?? "");
+      return Array.isArray(simple.value) && !simple.value.includes(fieldValue ?? "");
     default:
       return false;
   }

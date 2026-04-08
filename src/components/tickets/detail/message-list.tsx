@@ -92,16 +92,15 @@ export function MessageList({ messages }: MessageListProps) {
               ) : null}
 
               <div
-                className={`rounded-2xl px-3.5 py-2 text-sm leading-relaxed whitespace-pre-wrap ${
+                className={`rounded-2xl px-3.5 py-2 text-sm leading-relaxed ${
                   isInternal
                     ? "bg-yellow-50 border border-yellow-200/50 text-yellow-900"
                     : isMe
                       ? "bg-primary text-primary-foreground rounded-br-md"
                       : "bg-muted rounded-bl-md"
-                }`}
-              >
-                {msg.body}
-              </div>
+                } prose prose-sm max-w-none [&_p]:m-0 [&_ul]:my-1 [&_ol]:my-1`}
+                dangerouslySetInnerHTML={{ __html: msg.body }}
+              />
 
               <p className={`text-[10px] text-muted-foreground/50 mt-1 ${isMe ? "text-right" : ""}`}>
                 {formatTime(msg.createdAt)}

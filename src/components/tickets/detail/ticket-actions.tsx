@@ -17,8 +17,8 @@ import {
   CircleDot,
   UserPlus,
   ArrowRightLeft,
+  AlertTriangle,
   Loader2,
-  ChevronDown,
 } from "lucide-react";
 
 // Hardcoded — replace with auth
@@ -45,6 +45,7 @@ const STATUS_LABELS: Record<string, string> = {
 interface TicketActionsProps {
   ticketId: string;
   currentStatus: string;
+  currentPriority: string;
   assigneeId: string | null;
   assigneeName: string | null;
   teamId: string | null;
@@ -59,6 +60,7 @@ function getInitials(name: string): string {
 export function TicketActions({
   ticketId,
   currentStatus,
+  currentPriority,
   assigneeId,
   assigneeName,
   teamId,
@@ -165,6 +167,36 @@ export function TicketActions({
             </div>
           ) : null}
           {error ? <p className="text-xs text-red-500 mt-1">{error}</p> : null}
+        </div>
+
+        <Separator />
+
+        {/* Priority */}
+        <div>
+          <div className="flex items-center gap-1.5 mb-2">
+            <AlertTriangle className="h-3.5 w-3.5 text-orange-500" />
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Priority</span>
+          </div>
+          <select
+            value={currentPriority}
+            onChange={async (e) => {
+              setIsUpdating(true);
+              await fetch("/api/tickets/bulk", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "priority", ticketIds: [ticketId], priority: e.target.value, userId: CURRENT_USER_ID }),
+              });
+              onChanged();
+              setIsUpdating(false);
+            }}
+            disabled={isUpdating}
+            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+          >
+            <option value="P1">P1 — Urgent</option>
+            <option value="P2">P2 — High</option>
+            <option value="P3">P3 — Normal</option>
+            <option value="P4">P4 — Low</option>
+          </select>
         </div>
 
         <Separator />

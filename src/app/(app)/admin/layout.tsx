@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Users, Route, FolderTree, Clock, Zap } from "lucide-react";
+import { Users, UserCog, Route, FolderTree, Clock, Zap, Shield, MessageSquareText } from "lucide-react";
 
 const ADMIN_NAV = [
   { href: "/admin/teams", label: "Teams", icon: <Users className="h-4 w-4" /> },
@@ -11,6 +11,9 @@ const ADMIN_NAV = [
   { href: "/admin/categories", label: "Categories", icon: <FolderTree className="h-4 w-4" /> },
   { href: "/admin/sla", label: "SLA Settings", icon: <Clock className="h-4 w-4" /> },
   { href: "/admin/automation", label: "Automation", icon: <Zap className="h-4 w-4" /> },
+  { href: "/admin/canned-responses", label: "Canned Responses", icon: <MessageSquareText className="h-4 w-4" /> },
+  { href: "/admin/users", label: "Users", icon: <UserCog className="h-4 w-4" /> },
+  { href: "/admin/audit-log", label: "Audit Log", icon: <Shield className="h-4 w-4" /> },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

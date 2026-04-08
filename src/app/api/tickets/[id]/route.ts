@@ -1,13 +1,25 @@
 import { NextResponse } from "next/server";
 import { getSupabase } from "@/lib/db/supabase";
+import { canViewTicket } from "@/lib/auth/access-control";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
     const supabase = getSupabase();
+
+    // TODO: get from auth session
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get("userId") ?? "a89f9497-b330-47ad-9136-65a5e4e5abd8";
+    const role = searchParams.get("role") ?? "OWNER";
+
+    // Access control check
+    const hasAccess = await canViewTicket({ id: userId, role, primaryTeamId: null }, id);
+    if (!hasAccess) {
+      return NextResponse.json({ error: "Access denied" }, { status: 403 });
+    }
 
     const { data: ticket, error } = await supabase
       .from("Ticket")

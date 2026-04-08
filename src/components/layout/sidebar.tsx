@@ -16,10 +16,15 @@ import {
   UserCheck,
   Bell,
   BarChart3,
+  Columns3,
+  FileText,
+  CheckCircle,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ThemeToggle } from "./theme-toggle";
+import { NotificationCenter } from "./notification-center";
 
 const CURRENT_USER_ID = "a89f9497-b330-47ad-9136-65a5e4e5abd8";
 
@@ -32,6 +37,16 @@ export function Sidebar() {
   const searchParams = useSearchParams();
   const { data: session } = useSession();
   const [collapsed, setCollapsed] = useState(false);
+
+  // Auto-collapse on small screens
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 1024px)");
+    if (mq.matches) setCollapsed(true);
+    const handler = (e: MediaQueryListEvent) => setCollapsed(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
   const [unassignedCount, setUnassignedCount] = useState<number | null>(null);
   const [assignedCount, setAssignedCount] = useState<number | null>(null);
   const [notifCount, setNotifCount] = useState(0);
@@ -62,7 +77,9 @@ export function Sidebar() {
   const isTicketsActive = pathname === "/tickets" || pathname.startsWith("/tickets/");
   const isUnassignedActive = pathname === "/tickets" && currentScope === "unassigned";
   const isAssignedActive = pathname === "/tickets" && currentScope === "assigned";
-  const isTicketsMainActive = isTicketsActive && !isUnassignedActive && !isAssignedActive;
+  const isMyTicketsActive = pathname === "/tickets" && currentScope === "created";
+  const isCompletedActive = pathname === "/tickets" && currentScope === "completed";
+  const isTicketsMainActive = isTicketsActive && !isUnassignedActive && !isAssignedActive && !isMyTicketsActive && !isCompletedActive;
   const isAdminActive = pathname.startsWith("/admin");
 
   return (
@@ -80,14 +97,6 @@ export function Sidebar() {
         {!collapsed ? (
           <>
             <span className="font-semibold text-sm truncate flex-1">Ticket Master</span>
-            <button className="relative text-muted-foreground hover:text-foreground transition-colors" title="Notifications">
-              <Bell className="h-4.5 w-4.5" />
-              {notifCount > 0 ? (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold min-w-[14px] h-[14px] flex items-center justify-center rounded-full px-0.5">
-                  {notifCount > 99 ? "99+" : notifCount}
-                </span>
-              ) : null}
-            </button>
           </>
         ) : null}
       </div>
@@ -195,6 +204,37 @@ export function Sidebar() {
             </div>
           </Link>
         )}
+
+        {/* My Tickets (created by me) */}
+        {!collapsed ? (
+          <Link
+            href="/tickets?scope=created"
+            className={cn(
+              "flex items-center gap-2 rounded-md pl-11 pr-3 py-2 text-sm font-medium transition-colors",
+              isMyTicketsActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            )}
+          >
+            <FileText className="h-4 w-4" />
+            <span>My Tickets</span>
+          </Link>
+        ) : null}
+
+        {/* Completed */}
+        {!collapsed ? (
+          <Link
+            href="/tickets?scope=completed"
+            className={cn(
+              "flex items-center gap-2 rounded-md pl-11 pr-3 py-2 text-sm font-medium transition-colors",
+              isCompletedActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            )}
+          >
+            <CheckCircle className="h-4 w-4" />
+            <span>Completed</span>
+          </Link>
+        ) : null}
+
+        {/* Triage Board */}
+        <NavLink href="/triage" icon={<Columns3 className="h-5 w-5" />} label="Triage Board" active={pathname === "/triage"} collapsed={collapsed} />
 
         {/* Dashboard */}
         <NavLink href="/dashboard" icon={<LayoutDashboard className="h-5 w-5" />} label="Dashboard" active={pathname === "/dashboard"} collapsed={collapsed} />

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabase } from "@/lib/db/supabase";
+import { getAccessibleTicketIds } from "@/lib/auth/access-control";
 
 export async function GET(request: Request) {
   try {
@@ -17,8 +18,16 @@ export async function GET(request: Request) {
     const page = parseInt(searchParams.get("page") ?? "1", 10);
     const pageSize = Math.min(parseInt(searchParams.get("pageSize") ?? "20", 10), 100);
 
-    // Hardcoded user for now — replace with auth
+    // Get current user — hardcoded for now, replace with auth session
     const currentUserId = searchParams.get("userId") ?? "a89f9497-b330-47ad-9136-65a5e4e5abd8";
+    const userRole = searchParams.get("role") ?? "OWNER"; // TODO: get from session
+
+    // Access control — filter tickets based on role
+    const accessibleIds = await getAccessibleTicketIds({
+      id: currentUserId,
+      role: userRole,
+      primaryTeamId: null,
+    });
 
     let query = supabase
       .from("Ticket")
@@ -35,11 +44,23 @@ export async function GET(request: Request) {
         { count: "exact" }
       );
 
+    // Access control filter
+    if (accessibleIds !== "all") {
+      if (accessibleIds.length === 0) {
+        return NextResponse.json({ tickets: [], total: 0, page, pageSize });
+      }
+      query = query.in("id", accessibleIds);
+    }
+
     // Scope filter
     if (scope === "assigned") {
       query = query.eq("assigneeId", currentUserId);
     } else if (scope === "unassigned") {
       query = query.is("assigneeId", null);
+    } else if (scope === "created") {
+      query = query.eq("requesterId", currentUserId);
+    } else if (scope === "completed") {
+      query = query.in("status", ["RESOLVED", "CLOSED"]);
     }
 
     // Field filters
